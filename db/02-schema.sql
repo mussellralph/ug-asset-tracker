@@ -358,10 +358,12 @@ BEGIN
          acc.name, acc.name, incoming.job_ref, incoming.job_ref, incoming.condition, acc.name
     FROM jsonb_populate_recordset(NULL::public.tools, p_rows) incoming
     JOIN public.tools existing ON existing.id = incoming.id
-   WHERE incoming.id <> '__UG_STAFF_CONFIG__'
-     AND (existing.name, existing.category, existing.location, existing.notes, existing.condition_notes)
+   WHERE incoming.id NOT IN ('__UG_STAFF_CONFIG__', '__UG_VEHICLE_LOGS__')
+     AND (existing.name, existing.category, existing.location,
+          regexp_replace(COALESCE(existing.notes, ''), '[[:space:]]*\[(ODO:[0-9]+|REG:[^]]+|TRIP:[^]]+)\]', '', 'g'))
          IS DISTINCT FROM
-         (incoming.name, incoming.category, incoming.location, incoming.notes, incoming.condition_notes);
+         (incoming.name, incoming.category, incoming.location,
+          regexp_replace(COALESCE(incoming.notes, ''), '[[:space:]]*\[(ODO:[0-9]+|REG:[^]]+|TRIP:[^]]+)\]', '', 'g'));
 
   INSERT INTO public.tools AS t
     (id, name, category, status, condition, location, holder, current_holder, job_ref,

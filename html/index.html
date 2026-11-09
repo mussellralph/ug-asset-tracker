@@ -58,6 +58,15 @@
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
+    @media (max-width: 1023px) {
+      .mobile-activity-table { min-width: 720px; }
+      .mobile-inventory-table { min-width: 760px; }
+      .mobile-mileage-table { min-width: 1040px; }
+      .mobile-master-table { min-width: 900px; }
+      .overflow-x-auto { -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
+      table th, table td { overflow-wrap: anywhere; vertical-align: top; }
+    }
+
 
 
     /* Print styling for QR sticker labels */
@@ -359,15 +368,16 @@
       </div>
 
       <!-- RECENT SCANS LOG MINI-TABLE -->
-      <div class="bg-[#18181B] border border-zinc-800 rounded-2xl p-5 shadow-xl">
-        <div class="flex items-center justify-between mb-3">
+      <div class="bg-[#18181B] border border-zinc-800 rounded-2xl p-3 sm:p-5 shadow-xl">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
           <h3 class="text-sm font-bold text-white flex items-center gap-2">
             <i class="fa-solid fa-clock-rotate-left text-[#C41E3A]"></i> Live Store Transaction Log
           </h3>
           <span class="text-xs text-zinc-400 font-mono">Real-time Audit Trail</span>
         </div>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs">
+        <div class="hidden sm:block overflow-x-auto">
+          <p class="px-3 py-2 text-[10px] text-zinc-500 lg:hidden">Swipe sideways to view all columns.</p>
+          <table class="w-full text-left text-xs mobile-activity-table">
             <thead class="text-zinc-400 border-b border-zinc-800 uppercase text-[10px] font-mono">
               <tr>
                 <th class="py-2.5 px-3">Timestamp</th>
@@ -381,6 +391,7 @@
             <tbody id="activity-log-table" class="divide-y divide-zinc-800/80 text-zinc-300 font-mono"></tbody>
           </table>
         </div>
+        <div id="activity-log-cards" class="sm:hidden space-y-2"></div>
       </div>
 
     </section>
@@ -438,7 +449,7 @@
 
     <!-- SECTION 3: MASTER INVENTORY & EXCEL/CSV IMPORT-EXPORT -->
     <section id="view-inventory" class="hidden space-y-6">
-      <div class="bg-[#18181B] border border-zinc-800 rounded-2xl p-5 shadow-xl">
+      <div class="bg-[#18181B] border border-zinc-800 rounded-2xl p-3 sm:p-5 shadow-xl">
         <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-5">
           <div>
             <h2 class="text-lg font-bold text-white flex items-center gap-2">
@@ -478,8 +489,8 @@
           </select>
         </div>
 
-        <div class="overflow-x-auto rounded-xl border border-zinc-800">
-          <table class="w-full text-left text-xs">
+        <div class="hidden lg:block overflow-x-auto rounded-xl border border-zinc-800">
+          <table class="w-full text-left text-xs mobile-inventory-table">
             <thead class="bg-zinc-950 text-zinc-400 border-b border-zinc-800 uppercase font-mono text-[10px]">
               <tr>
                 <th class="py-3 px-4">Asset ID</th>
@@ -493,6 +504,7 @@
             <tbody id="inventory-table-body" class="divide-y divide-zinc-800/80 text-zinc-300"></tbody>
           </table>
         </div>
+        <div id="inventory-mobile-list" class="lg:hidden space-y-3"></div>
       </div>
     </section>
 
@@ -581,7 +593,8 @@
         </div>
 
         <div class="overflow-x-auto rounded-xl border border-zinc-800">
-          <table class="w-full text-left text-xs">
+          <p class="px-3 py-2 text-[10px] text-zinc-500 lg:hidden">Swipe sideways to view all columns.</p>
+          <table class="w-full text-left text-xs mobile-mileage-table">
             <thead class="bg-zinc-950 text-zinc-400 border-b border-zinc-800 uppercase font-mono text-[10px]">
               <tr>
                 <th class="py-3 px-3">Date / Time (Out &rarr; In)</th>
@@ -705,7 +718,8 @@
         </div>
 
         <div class="overflow-x-auto rounded-xl border border-zinc-800">
-          <table class="w-full text-left text-xs">
+          <p class="px-3 py-2 text-[10px] text-zinc-500 lg:hidden">Swipe sideways to view all columns.</p>
+          <table class="w-full text-left text-xs mobile-master-table">
             <thead class="bg-zinc-950 text-zinc-400 border-b border-zinc-800 uppercase font-mono text-[10px]">
               <tr>
                 <th class="py-3 px-4">Staff Member</th>
@@ -1897,10 +1911,10 @@
       }
 
       container.innerHTML = myTools.map(t => `
-        <div class="p-2.5 rounded-xl bg-zinc-950 border border-zinc-800 flex items-center justify-between gap-2">
-          <div>
-            <div class="text-xs font-bold text-white">${t.name} <span class="text-[#ff4d6d] font-mono">(${t.id})</span></div>
-            <div class="text-[10px] text-zinc-400 font-mono">${t.jobRef || 'Active Job'}</div>
+        <div class="min-w-0 p-2.5 rounded-xl bg-zinc-950 border border-zinc-800 flex flex-wrap items-center justify-between gap-2">
+          <div class="min-w-0 flex-1">
+            <div class="text-xs font-bold text-white break-words">${t.name} <span class="text-[#ff4d6d] font-mono break-all">(${t.id})</span></div>
+            <div class="text-[10px] text-zinc-400 font-mono break-words">${t.jobRef || 'Active Job'}</div>
           </div>
           <button onclick="triggerScan('${t.id.replace(/'/g, "\\'")}')" class="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 font-bold text-[11px] shrink-0">
             Return
@@ -2906,8 +2920,10 @@
 
     function renderActivityLogs() {
       const tbody = document.getElementById('activity-log-table');
-      if (!tbody) return;
-      tbody.innerHTML = activityLogs.slice(0, 12).map(log => {
+      const mobileCards = document.getElementById('activity-log-cards');
+      if (!tbody && !mobileCards) return;
+      const recentLogs = activityLogs.slice(0, 12);
+      if (tbody) tbody.innerHTML = recentLogs.map(log => {
         const isOut = log.action === 'SIGN OUT';
         return `
           <tr class="hover:bg-zinc-900/40">
@@ -2924,6 +2940,27 @@
           </tr>
         `;
       }).join('');
+
+      if (mobileCards) mobileCards.innerHTML = recentLogs.length ? recentLogs.map(log => {
+        const isOut = log.action === 'SIGN OUT';
+        return `
+          <article class="min-w-0 rounded-xl border border-zinc-800 bg-zinc-950/60 p-3 space-y-2.5">
+            <div class="flex items-center justify-between gap-2">
+              <span class="min-w-0 text-[11px] text-zinc-400 break-words">${log.time}</span>
+              <span class="shrink-0 px-2 py-1 rounded text-[10px] font-bold whitespace-nowrap ${isOut ? 'bg-[#C41E3A]/20 text-[#ff4d6d] border border-[#C41E3A]/40' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'}">${log.action}</span>
+            </div>
+            <div class="min-w-0">
+              <div class="font-sans font-semibold text-white break-words">${log.toolName}</div>
+              <div class="text-[#ff4d6d] font-mono text-xs break-all">${log.toolId}</div>
+            </div>
+            <div class="grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
+              <div class="min-w-0"><div class="text-[10px] uppercase text-zinc-500">Technician</div><div class="font-sans text-zinc-200 break-words">${log.tech}</div></div>
+              <div class="min-w-0"><div class="text-[10px] uppercase text-zinc-500">Condition</div><div class="font-sans font-bold text-emerald-400 break-words">${log.condition}</div></div>
+              <div class="col-span-2 min-w-0"><div class="text-[10px] uppercase text-zinc-500">Job / Site</div><div class="font-sans text-zinc-400 break-words">${log.job}</div></div>
+            </div>
+          </article>
+        `;
+      }).join('') : '<div class="rounded-xl border border-zinc-800 p-4 text-center text-xs text-zinc-500">No transactions recorded yet.</div>';
     }
 
     function renderCheckoutsList() {
@@ -2963,17 +3000,17 @@
         return `
           <div class="bg-[#18181B] border ${isOverdue ? 'border-[#C41E3A]' : 'border-zinc-800'} rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow">
             <div class="space-y-1">
-              <div class="flex items-center gap-2">
-                <span class="font-mono font-bold text-xs px-2 py-0.5 rounded bg-zinc-900 text-[#ff4d6d] border border-zinc-700">${t.id}</span>
-                <h4 class="font-bold text-white text-sm">${t.name}</h4>
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${isOverdue ? 'bg-[#C41E3A] text-white animate-pulse' : 'bg-emerald-500/15 text-emerald-400'}">
+              <div class="flex flex-wrap items-center gap-2 min-w-0">
+                <span class="font-mono font-bold text-xs px-2 py-0.5 rounded bg-zinc-900 text-[#ff4d6d] border border-zinc-700 break-all">${t.id}</span>
+                <h4 class="font-bold text-white text-sm break-words">${t.name}</h4>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-normal break-words ${isOverdue ? 'bg-[#C41E3A] text-white animate-pulse' : 'bg-emerald-500/15 text-emerald-400'}">
                   ${isOverdue ? `OVERDUE BY ${Math.abs(diffHours)}H` : `${diffHours}h remaining`}
                 </span>
               </div>
               <div class="text-xs text-zinc-300 flex flex-wrap gap-4 pt-1">
-                <span><i class="fa-solid fa-user text-[#C41E3A] mr-1"></i> <strong>${t.currentHolder || 'Assigned'}</strong></span>
-                <span><i class="fa-solid fa-briefcase text-amber-400 mr-1"></i> ${t.jobRef || 'Active Job'}</span>
-                <span><i class="fa-solid fa-shield-heart text-emerald-400 mr-1"></i> Condition: ${t.condition}</span>
+                <span class="break-words"><i class="fa-solid fa-user text-[#C41E3A] mr-1"></i> <strong>${t.currentHolder || 'Assigned'}</strong></span>
+                <span class="break-words"><i class="fa-solid fa-briefcase text-amber-400 mr-1"></i> ${t.jobRef || 'Active Job'}</span>
+                <span class="break-words"><i class="fa-solid fa-shield-heart text-emerald-400 mr-1"></i> Condition: ${t.condition}</span>
               </div>
             </div>
             <button onclick="triggerScan('${t.id.replace(/'/g, "\\'")}')" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shrink-0 transition shadow">
@@ -2986,7 +3023,8 @@
 
     function renderInventoryTable() {
       const tbody = document.getElementById('inventory-table-body');
-      if (!tbody) return;
+      const mobileList = document.getElementById('inventory-mobile-list');
+      if (!tbody && !mobileList) return;
 
       const perms = getEffectivePermissions();
       const canEdit = Boolean(perms.canEditRegister);
@@ -3004,7 +3042,7 @@
         return matchSearch && matchCat && matchStatus;
       });
 
-      tbody.innerHTML = filtered.map(t => {
+      if (tbody) tbody.innerHTML = filtered.map(t => {
         const isOut = t.status === 'Checked Out';
         const isVehicle = t.category === 'Fleet / Vehicle';
         const safeId = t.id.replace(/'/g, "\\'");
@@ -3042,6 +3080,50 @@
           </tr>
         `;
       }).join('');
+
+      if (mobileList) mobileList.innerHTML = filtered.length ? filtered.map(t => {
+        const isOut = t.status === 'Checked Out';
+        const isVehicle = t.category === 'Fleet / Vehicle';
+        const isRepair = t.status === 'In Repair';
+        const safeId = t.id.replace(/'/g, "\\'");
+        const statusLabel = isOut ? 'CHECKED OUT' : isRepair ? 'IN REPAIR' : 'IN STORES';
+        const statusClass = isOut ? 'bg-amber-500/15 text-amber-400 border-amber-500/30' : isRepair ? 'bg-rose-500/15 text-rose-300 border-rose-500/30' : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30';
+        return `
+          <article class="min-w-0 rounded-xl border border-zinc-800 bg-zinc-950/60 p-3.5 space-y-3">
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0">
+                <div class="text-[10px] uppercase tracking-wide text-zinc-500">Asset ID</div>
+                <div class="font-mono font-bold text-[#ff4d6d] text-sm break-all">${t.id}</div>
+              </div>
+              <span class="shrink-0 max-w-[60%] px-2 py-1 rounded border text-[10px] font-bold text-center whitespace-normal break-words ${statusClass}">${statusLabel}</span>
+            </div>
+            <div class="min-w-0 border-t border-zinc-800 pt-2.5">
+              <div class="text-[10px] uppercase tracking-wide text-zinc-500">Tool / Vehicle</div>
+              <div class="font-semibold text-white leading-snug break-words">${isVehicle ? '<i class="fa-solid fa-truck-pickup text-sky-400 mr-1.5"></i>' : ''}${t.name}</div>
+            </div>
+            <div class="grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
+              <div class="min-w-0"><div class="text-[10px] uppercase tracking-wide text-zinc-500">Category</div><div class="text-zinc-300 break-words">${t.category}</div></div>
+              <div class="min-w-0"><div class="text-[10px] uppercase tracking-wide text-zinc-500">Condition</div><div class="font-semibold text-emerald-400 break-words">${t.condition}</div></div>
+              ${isVehicle ? `<div class="min-w-0"><div class="text-[10px] uppercase tracking-wide text-zinc-500">Odometer</div><div class="font-mono font-bold text-sky-400 break-words">${Number(t.currentOdometer || 0).toLocaleString()} km</div></div>` : ''}
+            </div>
+            <div class="min-w-0 border-t border-zinc-800 pt-2.5 text-xs">
+              <div class="text-[10px] uppercase tracking-wide text-zinc-500">${isOut ? 'Current Holder / Job' : 'Location'}</div>
+              ${isOut
+                ? `<div class="text-zinc-200 break-words">${t.currentHolder || 'Assigned'}</div><div class="text-zinc-400 break-words">${t.jobRef || ''}</div>`
+                : `<div class="text-zinc-300 break-words">${t.location || 'Main Store'}</div>`}
+            </div>
+            <div class="flex flex-wrap gap-2 border-t border-zinc-800 pt-2.5">
+              <button onclick="openQrModal('${safeId}')" class="flex-1 min-w-[105px] px-2.5 py-2 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold whitespace-nowrap">
+                <i class="fa-solid fa-qrcode text-[#C41E3A] mr-1"></i> QR Tag
+              </button>
+              <button onclick="triggerScan('${safeId}')" class="flex-1 min-w-[105px] px-2.5 py-2 rounded bg-[#C41E3A] hover:bg-[#a61730] text-white text-xs font-bold whitespace-nowrap">
+                ${isOut ? 'Return' : 'Sign Out'}
+              </button>
+              ${canEdit ? `<button onclick="deleteAssetFromRegister('${safeId}')" title="Delete ${isVehicle ? 'Vehicle' : 'Asset'} from Register" class="px-3 py-2 rounded bg-zinc-900 hover:bg-rose-600 text-zinc-400 hover:text-white border border-zinc-700 text-xs"><i class="fa-solid fa-trash-can"></i></button>` : ''}
+            </div>
+          </article>
+        `;
+      }).join('') : '<div class="rounded-xl border border-zinc-800 p-4 text-center text-xs text-zinc-500">No assets match the current filters.</div>';
     }
 
     // FLEET & MILEAGE LOGBOOK RENDERER & CSV EXPORT
@@ -3111,30 +3193,30 @@
           return `
             <div class="p-4 rounded-xl bg-zinc-950 border ${isOut ? 'border-amber-500/50' : 'border-zinc-800'} flex flex-col justify-between gap-3 shadow">
               <div>
-                <div class="flex items-center justify-between gap-2">
-                  <span class="font-mono font-bold text-xs px-2 py-0.5 rounded bg-zinc-900 text-sky-400 border border-zinc-700">${v.id}</span>
-                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${isOut ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'}">
+                <div class="flex flex-wrap items-center justify-between gap-2 min-w-0">
+                  <span class="font-mono font-bold text-xs px-2 py-0.5 rounded bg-zinc-900 text-sky-400 border border-zinc-700 break-all">${v.id}</span>
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-normal break-words text-right ${isOut ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'}">
                     ${isOut ? 'OUT ON ROAD' : 'IN YARD'}
                   </span>
                 </div>
-                <h4 class="font-bold text-white text-sm mt-2">${v.name}</h4>
-                <div class="mt-2 flex items-center justify-between text-xs font-mono bg-zinc-900/90 px-3 py-1.5 rounded-lg border border-zinc-800">
+                <h4 class="font-bold text-white text-sm mt-2 break-words">${v.name}</h4>
+                <div class="mt-2 flex flex-wrap items-center justify-between gap-1 text-xs font-mono bg-zinc-900/90 px-3 py-1.5 rounded-lg border border-zinc-800">
                   <span class="text-zinc-400">Odometer:</span>
                   <span class="font-extrabold text-emerald-400">${odo} km</span>
                 </div>
                 ${isOut ? `
                   <div class="mt-2 text-[11px] text-zinc-300 space-y-0.5">
-                    <div><i class="fa-solid fa-user-tie text-[#C41E3A] mr-1"></i> Driver: <strong>${v.currentHolder}</strong></div>
-                    <div class="text-zinc-400 truncate"><i class="fa-solid fa-route text-amber-400 mr-1"></i> ${v.jobRef || 'Active Trip'}</div>
+                    <div class="break-words"><i class="fa-solid fa-user-tie text-[#C41E3A] mr-1"></i> Driver: <strong>${v.currentHolder}</strong></div>
+                    <div class="text-zinc-400 break-words"><i class="fa-solid fa-route text-amber-400 mr-1"></i> ${v.jobRef || 'Active Trip'}</div>
                   </div>
                 ` : `
-                  <div class="mt-2 text-[11px] text-zinc-400">
+                  <div class="mt-2 text-[11px] text-zinc-400 break-words">
                     <i class="fa-solid fa-square-parking text-sky-400 mr-1"></i> Bay: ${v.location || 'Main Yard'} &bull; Cond: ${v.condition}
                   </div>
                 `}
               </div>
-              <div class="flex items-center gap-2 pt-2 border-t border-zinc-800/80">
-                <button onclick="triggerScan('${safeId}')" class="flex-1 py-2 rounded-lg ${isOut ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-[#C41E3A] hover:bg-[#a61730]'} text-white font-bold text-xs transition shadow">
+              <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-zinc-800/80">
+                <button onclick="triggerScan('${safeId}')" class="flex-1 min-w-[180px] py-2 rounded-lg ${isOut ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-[#C41E3A] hover:bg-[#a61730]'} text-white font-bold text-xs whitespace-normal transition shadow">
                   <i class="fa-solid ${isOut ? 'fa-flag-checkered' : 'fa-key'} mr-1"></i> ${isOut ? 'Return & Log KM' : 'Dispatch Vehicle'}
                 </button>
                 <button onclick="openQrModal('${safeId}')" title="Print Vehicle QR Tag" class="px-3 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs">

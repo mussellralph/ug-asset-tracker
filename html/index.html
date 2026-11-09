@@ -821,6 +821,7 @@
                 <label class="text-[11px] text-zinc-400">Site *<input id="uss-site" maxlength="200" class="jobcard-input" /></label>
                 <div class="sm:col-span-2 lg:col-span-3 rounded-xl border border-zinc-800 p-3 space-y-2"><div class="flex items-center justify-between gap-2"><span class="text-[11px] text-zinc-300">Personnel on site</span><button type="button" onclick="addJobCardPersonnelRow('', 'uss-personnel')" class="px-3 py-1.5 rounded-lg bg-zinc-800 text-zinc-200 text-xs font-semibold"><i class="fa-solid fa-user-plus mr-1"></i>Add Staff Member</button></div><div id="uss-personnel" class="space-y-2"></div></div>
               </div>
+              <div id="uss-travel-details" class="hidden grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3"><label class="text-[11px] text-zinc-400">Odometer opening<input id="uss-odo-open" maxlength="80" class="jobcard-input" /></label><label class="text-[11px] text-zinc-400">Odometer closing<input id="uss-odo-close" maxlength="80" class="jobcard-input" /></label><label class="text-[11px] text-zinc-400">Start time<input id="uss-time-start" maxlength="40" class="jobcard-input" /></label><label class="text-[11px] text-zinc-400">Finish time<input id="uss-time-finish" maxlength="40" class="jobcard-input" /></label><label class="text-[11px] text-zinc-400">Total hours<input id="uss-hours" maxlength="40" class="jobcard-input" /></label></div>
             </section>
             <section class="rounded-xl border border-zinc-800 bg-zinc-950/50 p-3 sm:p-4 space-y-3">
               <h3 class="text-xs font-bold uppercase tracking-wider text-amber-300">Job description and works</h3>
@@ -894,7 +895,6 @@
               <label class="text-[11px] text-zinc-400">Time on site<input id="jc-time-on-site" maxlength="60" class="jobcard-input" placeholder="e.g. 2 h" /></label>
               <label class="text-[11px] text-zinc-400">Kilometres<input id="jc-kilometres" inputmode="decimal" maxlength="40" class="jobcard-input" /></label>
             </div>
-            <div id="uss-travel-details" class="hidden grid grid-cols-1 sm:grid-cols-3 gap-3"><label class="text-[11px] text-zinc-400">Odometer opening<input id="uss-odo-open" maxlength="80" class="jobcard-input" /></label><label class="text-[11px] text-zinc-400">Odometer closing<input id="uss-odo-close" maxlength="80" class="jobcard-input" /></label><label class="text-[11px] text-zinc-400">Start time<input id="uss-time-start" maxlength="40" class="jobcard-input" /></label><label class="text-[11px] text-zinc-400">Finish time<input id="uss-time-finish" maxlength="40" class="jobcard-input" /></label><label class="text-[11px] text-zinc-400">Total hours<input id="uss-hours" maxlength="40" class="jobcard-input" /></label></div>
             <label class="block text-[11px] text-zinc-400">Remarks<textarea id="jc-remarks" rows="3" maxlength="2000" class="jobcard-input resize-y"></textarea></label>
           </div>
 

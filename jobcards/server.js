@@ -137,13 +137,13 @@ function createPdf(data, signer, signatures) {
     doc.x = doc.page.margins.left;
     doc.y = logoY + logoHeight + 7;
     doc.fillColor(ink).font('Helvetica-Bold').fontSize(12)
-      .text(isUss ? `JOB CARD NO. ${clean(data.serviceScheduleNo, 40)}` : 'SERVICE SCHEDULE', doc.page.margins.left, doc.y, { width, align: 'center' });
+      .text(isUss ? `JOB NO. ${clean(data.serviceScheduleNo, 40)}` : 'SERVICE SCHEDULE', doc.page.margins.left, doc.y, { width, align: 'center' });
     doc.x = doc.page.margins.left;
     doc.moveDown(0.5);
     if (isUss) {
       grid([['Date', data.date], ['Job No.', data.jobNo], ['Customer', data.customer], ['Quote No.', data.quoteNo], ['Order No.', data.orderNo], ['Required Date', data.requiredDate], ['Site', data.site]], 2);
       heading('Personnel, Odometer and Time on Site');
-      grid([['Personnel', data.personnel], ['Odometer Opening', data.odometerOpening], ['Odometer Closing', data.odometerClosing], ['Total Kilometres', data.kilometres], ['Start', data.timeStart], ['Finish', data.timeFinish], ['Total Hours', data.totalHours]], 3);
+      grid([['Personnel', Array.isArray(data.personnel) ? data.personnel.join(', ') : data.personnel], ['Odometer Opening', data.odometerOpening], ['Odometer Closing', data.odometerClosing], ['Travel Time', data.travelTime], ['Time on Site', data.timeOnSite], ['Total Kilometres', data.kilometres], ['Start', data.timeStart], ['Finish', data.timeFinish], ['Total Hours', data.totalHours]], 3);
       heading('Job Description and Works');
       grid([['Tasks', data.tasks], ['Works Complete', data.worksComplete], ['Works In Progress', data.worksInProgress], ['Additional Work / Equipment', data.additionalWork], ['Requested By', data.requestedBy], ['Request Date', data.requestDate], ['Remarks', data.remarks], ['Billing', data.billing]], 1);
     } else {
@@ -200,7 +200,7 @@ async function handleSubmit(req, res) {
     const company = clean(data.company, 20).toUpperCase();
     if (!allowedCompanies.has(company)) return send(res, 400, { error: 'Select a valid company.' });
     if (company === 'SINABO' && (!clean(data.customer) || !clean(data.site) || !clean(data.serviceScheduleNo) || !clean(data.jobNo || data.unitRef))) return send(res, 400, { error: 'Complete the customer, site, service schedule number and Job No.' });
-    if (company === 'USS' && (!clean(data.customer) || !clean(data.site) || !clean(data.serviceScheduleNo) || !clean(data.date))) return send(res, 400, { error: 'Complete the date, customer, site and Job Card No.' });
+    if (company === 'USS' && (!clean(data.customer) || !clean(data.site) || !clean(data.serviceScheduleNo) || !clean(data.date))) return send(res, 400, { error: 'Complete the date, customer, site and Job No.' });
     const clientId = clean(data.clientId, 120);
     if (clientId.length < 8) return send(res, 400, { error: 'Submission reference is missing. Please try again.' });
 

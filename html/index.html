@@ -59,6 +59,8 @@
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     .jobcard-input { display:block; width:100%; margin-top:0.35rem; border:1px solid #3f3f46; border-radius:0.6rem; background:#09090b; color:#fafafa; padding:0.65rem 0.75rem; font-size:0.875rem; }
     .jobcard-input:focus { outline:none; border-color:#fbbf24; }
+    .jobcard-date { color-scheme:dark; }
+    .jobcard-date::-webkit-calendar-picker-indicator { opacity:.9; cursor:pointer; filter:invert(.85); }
     .jobcard-signature { display:block; width:100%; height:150px; border:1px dashed #52525b; border-radius:0.75rem; background:#fff; touch-action:none; }
     @media (max-width: 639px) {
       .mobile-header-layout { flex-direction: column; justify-content: center; gap: 0.5rem; }
@@ -810,21 +812,14 @@
             <section class="rounded-xl border border-zinc-800 bg-zinc-950/50 p-3 sm:p-4">
               <h3 class="text-xs font-bold uppercase tracking-wider text-amber-300 mb-3">Job details</h3>
               <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                <label class="text-[11px] text-zinc-400">Job Card No. *<input id="uss-card-no" maxlength="40" class="jobcard-input" /></label>
-                <label class="text-[11px] text-zinc-400">Date *<input id="uss-date" type="date" class="jobcard-input" /></label>
+                <label class="text-[11px] text-zinc-400">Date *<input id="uss-date" type="date" class="jobcard-input jobcard-date" /></label>
                 <label class="text-[11px] text-zinc-400">Job No.<input id="uss-job-no" maxlength="100" class="jobcard-input" /></label>
                 <label class="text-[11px] text-zinc-400">Customer *<input id="uss-customer" maxlength="200" class="jobcard-input" /></label>
                 <label class="text-[11px] text-zinc-400">Quote No.<input id="uss-quote-no" maxlength="100" class="jobcard-input" /></label>
                 <label class="text-[11px] text-zinc-400">Order No.<input id="uss-order-no" maxlength="100" class="jobcard-input" /></label>
-                <label class="text-[11px] text-zinc-400">Required Date<input id="uss-required-date" type="date" class="jobcard-input" /></label>
+                <label class="text-[11px] text-zinc-400">Required Date<input id="uss-required-date" type="date" class="jobcard-input jobcard-date" /></label>
                 <label class="text-[11px] text-zinc-400">Site *<input id="uss-site" maxlength="200" class="jobcard-input" /></label>
-                <label class="text-[11px] text-zinc-400">Personnel on site<input id="uss-personnel" maxlength="500" placeholder="Names separated by commas" class="jobcard-input" /></label>
-                <label class="text-[11px] text-zinc-400">Odometer opening<input id="uss-odo-open" maxlength="80" class="jobcard-input" /></label>
-                <label class="text-[11px] text-zinc-400">Odometer closing<input id="uss-odo-close" maxlength="80" class="jobcard-input" /></label>
-                <label class="text-[11px] text-zinc-400">Total kilometres<input id="uss-kilometres" maxlength="80" class="jobcard-input" /></label>
-                <label class="text-[11px] text-zinc-400">Time on site: Start<input id="uss-time-start" maxlength="40" class="jobcard-input" /></label>
-                <label class="text-[11px] text-zinc-400">Finish<input id="uss-time-finish" maxlength="40" class="jobcard-input" /></label>
-                <label class="text-[11px] text-zinc-400">Total hours<input id="uss-hours" maxlength="40" class="jobcard-input" /></label>
+                <div class="sm:col-span-2 lg:col-span-3 rounded-xl border border-zinc-800 p-3 space-y-2"><div class="flex items-center justify-between gap-2"><span class="text-[11px] text-zinc-300">Personnel on site</span><button type="button" onclick="addJobCardPersonnelRow('', 'uss-personnel')" class="px-3 py-1.5 rounded-lg bg-zinc-800 text-zinc-200 text-xs font-semibold"><i class="fa-solid fa-user-plus mr-1"></i>Add Staff Member</button></div><div id="uss-personnel" class="space-y-2"></div></div>
               </div>
             </section>
             <section class="rounded-xl border border-zinc-800 bg-zinc-950/50 p-3 sm:p-4 space-y-3">
@@ -833,7 +828,6 @@
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3"><label class="text-[11px] text-zinc-400">Works complete<textarea id="uss-complete" rows="3" maxlength="1500" class="jobcard-input"></textarea></label><label class="text-[11px] text-zinc-400">Works in progress<textarea id="uss-progress" rows="3" maxlength="1500" class="jobcard-input"></textarea></label></div>
               <label class="block text-[11px] text-zinc-400">Additional work / equipment<textarea id="uss-additional" rows="3" maxlength="1500" class="jobcard-input"></textarea></label>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3"><label class="text-[11px] text-zinc-400">Requested by<input id="uss-requested-by" maxlength="160" class="jobcard-input" /></label><label class="text-[11px] text-zinc-400">Request date<input id="uss-request-date" type="date" class="jobcard-input" /></label></div>
-              <label class="block text-[11px] text-zinc-400">Remarks<textarea id="uss-remarks" rows="3" maxlength="2000" class="jobcard-input"></textarea></label>
               <fieldset class="flex gap-5 text-sm text-zinc-200"><legend class="text-[11px] text-zinc-400 mb-2">Billing</legend><label><input type="radio" name="uss-billing" value="Invoice" /> Invoice</label><label><input type="radio" name="uss-billing" value="No Charge" /> No Charge</label></fieldset>
             </section>
           </div>
@@ -841,7 +835,7 @@
             <h3 class="text-xs font-bold uppercase tracking-wider text-amber-300 mb-3">Service schedule details</h3>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <label class="text-[11px] text-zinc-400">Service Schedule No. *<input id="jc-schedule" required maxlength="40" class="jobcard-input" autocomplete="off" /></label>
-              <label class="text-[11px] text-zinc-400">Date *<input id="jc-date" required type="date" class="jobcard-input" /></label>
+              <label class="text-[11px] text-zinc-400">Date *<input id="jc-date" required type="date" class="jobcard-input jobcard-date" /></label>
               <label class="text-[11px] text-zinc-400">Job No.<input id="jc-unit-ref" maxlength="100" class="jobcard-input" /></label>
               <label class="text-[11px] text-zinc-400">Customer *<input id="jc-customer" required maxlength="200" class="jobcard-input" autocomplete="organization" /></label>
               <label class="text-[11px] text-zinc-400">Order No.<input id="jc-order-no" maxlength="100" class="jobcard-input" /></label>
@@ -893,13 +887,14 @@
             <div id="sinabo-parts" class="space-y-2"></div>
           </div>
 
-          <div class="rounded-xl border border-zinc-800 bg-zinc-950/50 p-3 sm:p-4 space-y-3">
+          <div id="jobcard-travel-notes" class="rounded-xl border border-zinc-800 bg-zinc-950/50 p-3 sm:p-4 space-y-3">
             <h3 class="text-xs font-bold uppercase tracking-wider text-amber-300">Travel and notes</h3>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <label class="text-[11px] text-zinc-400">Travel time<input id="jc-travel-time" maxlength="60" class="jobcard-input" placeholder="e.g. 1 h 30 min" /></label>
               <label class="text-[11px] text-zinc-400">Time on site<input id="jc-time-on-site" maxlength="60" class="jobcard-input" placeholder="e.g. 2 h" /></label>
               <label class="text-[11px] text-zinc-400">Kilometres<input id="jc-kilometres" inputmode="decimal" maxlength="40" class="jobcard-input" /></label>
             </div>
+            <div id="uss-travel-details" class="hidden grid grid-cols-1 sm:grid-cols-3 gap-3"><label class="text-[11px] text-zinc-400">Odometer opening<input id="uss-odo-open" maxlength="80" class="jobcard-input" /></label><label class="text-[11px] text-zinc-400">Odometer closing<input id="uss-odo-close" maxlength="80" class="jobcard-input" /></label><label class="text-[11px] text-zinc-400">Start time<input id="uss-time-start" maxlength="40" class="jobcard-input" /></label><label class="text-[11px] text-zinc-400">Finish time<input id="uss-time-finish" maxlength="40" class="jobcard-input" /></label><label class="text-[11px] text-zinc-400">Total hours<input id="uss-hours" maxlength="40" class="jobcard-input" /></label></div>
             <label class="block text-[11px] text-zinc-400">Remarks<textarea id="jc-remarks" rows="3" maxlength="2000" class="jobcard-input resize-y"></textarea></label>
           </div>
 
@@ -2799,6 +2794,8 @@
       if (parts && !parts.children.length) addJobCardPartRow();
       const personnel = document.getElementById('sinabo-personnel');
       if (personnel && !personnel.children.length) addJobCardPersonnelRow();
+      const ussPersonnel = document.getElementById('uss-personnel');
+      if (ussPersonnel && !ussPersonnel.children.length) addJobCardPersonnelRow('', 'uss-personnel');
     }
 
     function addJobCardPartRow(item = '', quantity = '', notes = '') {
@@ -2823,7 +2820,7 @@
     }
 
     function refreshJobCardPersonnelSelects() {
-      document.querySelectorAll('#sinabo-personnel [data-jobcard-personnel-select]').forEach(select => {
+      document.querySelectorAll('#sinabo-personnel [data-jobcard-personnel-select], #uss-personnel [data-jobcard-personnel-select]').forEach(select => {
         const selectedName = select.value === '__add_new__' ? '' : select.value;
         const canonicalName = jobCardPersonnel.find(name => name.toLowerCase() === selectedName.toLowerCase()) || selectedName;
         select.innerHTML = jobCardPersonnelOptions(canonicalName);
@@ -2831,8 +2828,8 @@
       });
     }
 
-    function addJobCardPersonnelRow(selectedName = '') {
-      const container = document.getElementById('sinabo-personnel');
+    function addJobCardPersonnelRow(selectedName = '', containerId = 'sinabo-personnel') {
+      const container = document.getElementById(containerId);
       if (!container) return;
       if (container.children.length >= 20) { showToast('A job card can list up to 20 additional staff members.', 'error'); return; }
       const row = document.createElement('div');
@@ -3048,6 +3045,7 @@
       const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
       if (uss && !document.getElementById('uss-date')?.value) document.getElementById('uss-date').value = today;
       document.getElementById('uss-jobcard-fields')?.classList.toggle('hidden', !uss);
+      document.getElementById('uss-travel-details')?.classList.toggle('hidden', !uss);
       ['sinabo-generator-details','sinabo-generator-checks-section','sinabo-generator-readings-section','sinabo-personnel','sinabo-run-tests','sinabo-control-tests','sinabo-parts'].forEach(id => document.getElementById(id)?.closest('.rounded-xl')?.classList.toggle('hidden', uss));
       ['sinabo','uss'].forEach(key => {
         const button = document.getElementById(`jobcard-company-${key}`);
@@ -3062,12 +3060,12 @@
       const company = document.getElementById('jobcard-company')?.value || 'SINABO';
       const servicemanName = currentUser?.name || value('jc-serviceman');
       if (company === 'USS') return {
-        clientId: activeJobCardDraftId || newJobCardId(), company: 'USS', serviceScheduleNo: value('uss-card-no'), date: value('uss-date'),
+        clientId: activeJobCardDraftId || newJobCardId(), company: 'USS', serviceScheduleNo: value('uss-job-no'), date: value('uss-date'),
         jobNo: value('uss-job-no'), customer: value('uss-customer'), quoteNo: value('uss-quote-no'), orderNo: value('uss-order-no'), requiredDate: value('uss-required-date'), site: value('uss-site'),
-        personnel: value('uss-personnel'), odometerOpening: value('uss-odo-open'), odometerClosing: value('uss-odo-close'), kilometres: value('uss-kilometres'),
-        timeStart: value('uss-time-start'), timeFinish: value('uss-time-finish'), totalHours: value('uss-hours'), tasks: value('uss-tasks'), worksComplete: value('uss-complete'),
+        personnel: [...document.querySelectorAll('#uss-personnel [data-jobcard-personnel-select]')].map(select => select.value.trim()).filter(name => name && name !== '__add_new__'), odometerOpening: value('uss-odo-open'), odometerClosing: value('uss-odo-close'), kilometres: value('jc-kilometres'),
+        travelTime: value('jc-travel-time'), timeOnSite: value('jc-time-on-site'), timeStart: value('uss-time-start'), timeFinish: value('uss-time-finish'), totalHours: value('uss-hours'), tasks: value('uss-tasks'), worksComplete: value('uss-complete'),
         worksInProgress: value('uss-progress'), additionalWork: value('uss-additional'), requestedBy: value('uss-requested-by'), requestDate: value('uss-request-date'),
-        remarks: value('uss-remarks'), billing: document.querySelector('input[name="uss-billing"]:checked')?.value || '', customerRepName: value('jc-customer-rep'), servicemanName,
+        remarks: value('jc-remarks'), billing: document.querySelector('input[name="uss-billing"]:checked')?.value || '', customerRepName: value('jc-customer-rep'), servicemanName,
         customerSignature: includeSignatures ? jobCardSignatureData('customer') : '', servicemanSignature: includeSignatures ? jobCardSignatureData('serviceman') : ''
       };
       const checks = SINABO_CHECK_ITEMS.map((label, i) => ({ label, result: value(`jc-check-${i}`), notes: value(`jc-check-note-${i}`) }));
@@ -3090,7 +3088,7 @@
     }
 
     function hasUncommittedJobCardPersonnel() {
-      return [...document.querySelectorAll('#sinabo-personnel [data-jobcard-personnel-entry]')]
+      return [...document.querySelectorAll('#sinabo-personnel [data-jobcard-personnel-entry], #uss-personnel [data-jobcard-personnel-entry]')]
         .some(entry => !entry.classList.contains('hidden') && Boolean(entry.querySelector('input')?.value.trim()));
     }
 
@@ -3170,7 +3168,7 @@
         return false;
       }
       const data = collectJobCardData(true);
-      if (!data.serviceScheduleNo) { showToast('Enter the job card number before saving a draft.', 'error'); document.getElementById('jc-schedule')?.focus(); return false; }
+      if (!data.serviceScheduleNo) { showToast(data.company === 'USS' ? 'Enter the Job No. before saving this draft.' : 'Enter the service schedule number before saving a draft.', 'error'); document.getElementById(data.company === 'USS' ? 'uss-job-no' : 'jc-schedule')?.focus(); return false; }
       activeJobCardDraftId = data.clientId;
       try {
         await storeLocalJobCard({ clientId: data.clientId, company: data.company, serviceScheduleNo: data.serviceScheduleNo, customer: data.customer, status: 'draft', data });
@@ -3189,8 +3187,9 @@
       const data = draft.data;
       selectJobCardCompany(data.company || 'SINABO');
       if (data.company === 'USS') {
-        const map = { 'uss-card-no':'serviceScheduleNo','uss-date':'date','uss-job-no':'jobNo','uss-customer':'customer','uss-quote-no':'quoteNo','uss-order-no':'orderNo','uss-required-date':'requiredDate','uss-site':'site','uss-personnel':'personnel','uss-odo-open':'odometerOpening','uss-odo-close':'odometerClosing','uss-kilometres':'kilometres','uss-time-start':'timeStart','uss-time-finish':'timeFinish','uss-hours':'totalHours','uss-tasks':'tasks','uss-complete':'worksComplete','uss-progress':'worksInProgress','uss-additional':'additionalWork','uss-requested-by':'requestedBy','uss-request-date':'requestDate','uss-remarks':'remarks' };
+        const map = { 'uss-date':'date','uss-job-no':'jobNo','uss-customer':'customer','uss-quote-no':'quoteNo','uss-order-no':'orderNo','uss-required-date':'requiredDate','uss-site':'site','uss-odo-open':'odometerOpening','uss-odo-close':'odometerClosing','jc-travel-time':'travelTime','jc-time-on-site':'timeOnSite','jc-kilometres':'kilometres','jc-remarks':'remarks','uss-time-start':'timeStart','uss-time-finish':'timeFinish','uss-hours':'totalHours','uss-tasks':'tasks','uss-complete':'worksComplete','uss-progress':'worksInProgress','uss-additional':'additionalWork','uss-requested-by':'requestedBy','uss-request-date':'requestDate' };
         Object.entries(map).forEach(([id,key]) => { const el=document.getElementById(id); if(el) el.value=data[key] || ''; });
+        const ussPersonnel = document.getElementById('uss-personnel'); ussPersonnel.innerHTML = ''; (data.personnel?.length ? data.personnel : ['']).forEach(name => addJobCardPersonnelRow(name, 'uss-personnel'));
         const billing = document.querySelector(`input[name="uss-billing"][value="${data.billing}"]`); if (billing) billing.checked = true;
       }
       const map = { 'jc-schedule': 'serviceScheduleNo', 'jc-date': 'date', 'jc-unit-ref': 'jobNo', 'jc-customer': 'customer', 'jc-order-no': 'orderNo', 'jc-site': 'site', 'jc-hour-metre': 'hourMetre', 'jc-engine-type': 'engineType', 'jc-alternator-type': 'alternatorType', 'jc-travel-time': 'travelTime', 'jc-time-on-site': 'timeOnSite', 'jc-kilometres': 'kilometres', 'jc-remarks': 'remarks', 'jc-customer-rep': 'customerRepName' };
@@ -3200,7 +3199,7 @@
       const restoreTests = (rows, prefix) => rows.forEach((row, i) => { const sel = document.getElementById(`${prefix}-result-${i}`); const note = document.getElementById(`${prefix}-note-${i}`); if (sel) sel.value = row.result || ''; if (note) note.value = row.notes || ''; });
       restoreTests(data.runTests || [], 'jc-run'); restoreTests(data.controlTests || [], 'jc-control');
       const parts = document.getElementById('sinabo-parts'); parts.innerHTML = ''; (data.parts?.length ? data.parts : [{}]).forEach(row => addJobCardPartRow(row.item, row.quantity, row.notes));
-      const personnel = document.getElementById('sinabo-personnel'); personnel.innerHTML = ''; (data.personnel?.length ? data.personnel : ['']).forEach(name => addJobCardPersonnelRow(name));
+      if (data.company !== 'USS') { const personnel = document.getElementById('sinabo-personnel'); personnel.innerHTML = ''; (data.personnel?.length ? data.personnel : ['']).forEach(name => addJobCardPersonnelRow(name)); }
       document.getElementById('jc-serviceman').value = currentUser?.name || data.servicemanName || '';
       initializeJobCardSignature('customer'); initializeJobCardSignature('serviceman');
       clearJobCardSignature('customer'); clearJobCardSignature('serviceman');
@@ -3253,7 +3252,7 @@
       const data = collectJobCardData(true);
       activeJobCardDraftId = data.clientId;
       if (data.company === 'USS' && (!data.serviceScheduleNo || !data.date || !data.customer || !data.site)) {
-        showToast('Complete Job Card No., date, customer and site before submitting.', 'error');
+        showToast('Complete Job No., date, customer and site before submitting.', 'error');
         return;
       }
       if (!data.customerSignature || !data.servicemanSignature) {

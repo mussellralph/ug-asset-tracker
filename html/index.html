@@ -812,12 +812,12 @@
             <section class="rounded-xl border border-zinc-800 bg-zinc-950/50 p-3 sm:p-4">
               <h3 class="text-xs font-bold uppercase tracking-wider text-amber-300 mb-3">Job details</h3>
               <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                <label class="text-[11px] text-zinc-400">Date *<input id="uss-date" type="date" class="jobcard-input jobcard-date" /></label>
+                <label class="text-[11px] text-zinc-400">Date *<input id="uss-date" type="date" onclick="openJobCardDatePicker(this)" class="jobcard-input jobcard-date" /></label>
                 <label class="text-[11px] text-zinc-400">Job No.<input id="uss-job-no" maxlength="100" class="jobcard-input" /></label>
                 <label class="text-[11px] text-zinc-400">Customer *<input id="uss-customer" maxlength="200" class="jobcard-input" /></label>
                 <label class="text-[11px] text-zinc-400">Quote No.<input id="uss-quote-no" maxlength="100" class="jobcard-input" /></label>
                 <label class="text-[11px] text-zinc-400">Order No.<input id="uss-order-no" maxlength="100" class="jobcard-input" /></label>
-                <label class="text-[11px] text-zinc-400">Required Date<input id="uss-required-date" type="date" class="jobcard-input jobcard-date" /></label>
+                <label class="text-[11px] text-zinc-400">Required Date<input id="uss-required-date" type="date" onclick="openJobCardDatePicker(this)" class="jobcard-input jobcard-date" /></label>
                 <label class="text-[11px] text-zinc-400">Site *<input id="uss-site" maxlength="200" class="jobcard-input" /></label>
                 <div class="sm:col-span-2 lg:col-span-3 rounded-xl border border-zinc-800 p-3 space-y-2"><div class="flex items-center justify-between gap-2"><span class="text-[11px] text-zinc-300">Personnel on site</span><button type="button" onclick="addJobCardPersonnelRow('', 'uss-personnel')" class="px-3 py-1.5 rounded-lg bg-zinc-800 text-zinc-200 text-xs font-semibold"><i class="fa-solid fa-user-plus mr-1"></i>Add Staff Member</button></div><div id="uss-personnel" class="space-y-2"></div></div>
               </div>
@@ -835,7 +835,7 @@
             <h3 class="text-xs font-bold uppercase tracking-wider text-amber-300 mb-3">Service schedule details</h3>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <label class="text-[11px] text-zinc-400">Service Schedule No. *<input id="jc-schedule" required maxlength="40" class="jobcard-input" autocomplete="off" /></label>
-              <label class="text-[11px] text-zinc-400">Date *<input id="jc-date" required type="date" class="jobcard-input jobcard-date" /></label>
+              <label class="text-[11px] text-zinc-400">Date *<input id="jc-date" required type="date" onclick="openJobCardDatePicker(this)" class="jobcard-input jobcard-date" /></label>
               <label class="text-[11px] text-zinc-400">Job No.<input id="jc-unit-ref" maxlength="100" class="jobcard-input" /></label>
               <label class="text-[11px] text-zinc-400">Customer *<input id="jc-customer" required maxlength="200" class="jobcard-input" autocomplete="organization" /></label>
               <label class="text-[11px] text-zinc-400">Order No.<input id="jc-order-no" maxlength="100" class="jobcard-input" /></label>
@@ -3036,6 +3036,11 @@
       const image = new Image();
       image.onload = () => { const rect = canvas.getBoundingClientRect(); const ctx = canvas.getContext('2d'); ctx.drawImage(image, 0, 0, rect.width, rect.height); canvas.dataset.signed = 'true'; };
       image.src = dataUrl;
+    }
+
+    function openJobCardDatePicker(input) {
+      if (!input || typeof input.showPicker !== 'function') return;
+      try { input.showPicker(); } catch (error) { /* Keep the browser's native date input fallback. */ }
     }
 
     function selectJobCardCompany(company) {

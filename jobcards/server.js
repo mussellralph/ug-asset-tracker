@@ -210,7 +210,7 @@ async function handleSubmit(req, res) {
     const previous = await client.query('SELECT company, file_name AS "fileName", submitted_by AS "submittedBy" FROM public.job_cards WHERE id = $1', [id]);
     if (previous.rowCount) return send(res, 200, { ok: true, id, ...previous.rows[0], alreadySubmitted: true });
     const jobNo = clean(data.jobNo || data.unitRef, 80).replace(/[^A-Za-z0-9_-]/g, '_');
-    const fileName = `SINABO_${jobNo}.pdf`;
+    const fileName = `SINABO_JC_${jobNo}.pdf`;
     const directory = path.join(outputRoot, company);
     finalPath = path.join(directory, fileName);
     const pdf = await createPdf(data, submittedBy, signatures);

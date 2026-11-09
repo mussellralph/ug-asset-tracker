@@ -217,7 +217,23 @@ async function handleSubmit(req, res) {
     if (clean(data.servicemanName, 160) !== submittedBy) return send(res, 403, { error: `Sign in as ${clean(data.servicemanName, 160) || 'the serviceman'} to upload this signed job card.` });
     const id = crypto.createHash('sha256').update(clientId).digest('hex').slice(0, 32);
     const previous = await client.query('SELECT company, file_name AS "fileName", submitted_by AS "submittedBy" FROM public.job_cards WHERE id = $1', [id]);
-    if (previous.rowCount) return send(res, 200, { ok: true, id, ...previous.rows[0], alreadySubmitted: true });
+    if (previous.rowCount) {
+      const saved = previous.rows[0];
+      if (saved.company !== company) return send(res, 409, { error: 'This submission reference is already recorded under another company.' });
+      const savedPath = path.join(outputRoot, saved.company, saved.fileName);
+      try {
+        await fs.access(savedPath);
+        return send(res, 200, { ok: true, id, ...saved, alreadySubmitted: true });
+      } catch {}
+      // The database can retain the submission record after a share was detached or its PDF was removed.
+      // Rebuild the missing file before reporting success for a retry.
+      finalPath = savedPath;
+      await fs.mkdir(path.dirname(savedPath), { recursive: true });
+      const pdf = await createPdf(data, submittedBy, signatures);
+      await fs.writeFile(savedPath, pdf, { flag: 'wx' });
+      fileWritten = true;
+      return send(res, 200, { ok: true, id, ...saved, restoredFile: true });
+    }
     const jobNo = clean(company === 'USS' ? data.serviceScheduleNo : (data.jobNo || data.unitRef), 80).replace(/[^A-Za-z0-9_-]/g, '_');
     const fileName = `${company}_JC_${jobNo}.pdf`;
     const directory = path.join(outputRoot, company);

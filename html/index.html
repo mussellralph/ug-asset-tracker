@@ -2087,7 +2087,7 @@
       // Toggle navigation tabs based on permissions
       const showDash = Boolean(perms.canViewDashboard);
       const showMaster = Boolean(perms.canManagePermissions);
-      const showGoLive = roleName === 'Master Admin';
+      const showGoLive = currentUser.role === 'Master Admin' && roleName === 'Master Admin';
       const showEdit = Boolean(perms.canEditRegister);
 
       document.getElementById('tab-btn-checkouts').classList.toggle('hidden', !showDash);
@@ -3343,7 +3343,7 @@
         showToast("Manager or Storeman permission required", "error");
         return;
       }
-      if (tab === 'golive' && getEffectiveRoleName() !== 'Master Admin') {
+      if (tab === 'golive' && (currentUser?.role !== 'Master Admin' || getEffectiveRoleName() !== 'Master Admin')) {
         showToast("Master Admin role required", "error");
         return;
       }
@@ -3354,14 +3354,16 @@
         const mob = document.getElementById(`mob-nav-${t}`);
         if (view) view.classList.toggle('hidden', t !== tab);
         if (btn) {
-          btn.className = t === tab
+          const keepHidden = btn.classList.contains('hidden');
+          btn.className = (t === tab
             ? "flex-1 py-2.5 px-4 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition duration-150 bg-[#C41E3A] text-white shadow-md"
-            : "flex-1 py-2.5 px-4 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition duration-150 text-zinc-400 hover:text-white hover:bg-zinc-800/70";
+            : "flex-1 py-2.5 px-4 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition duration-150 text-zinc-400 hover:text-white hover:bg-zinc-800/70") + (keepHidden ? ' hidden' : '');
         }
         if (mob) {
-          mob.className = t === tab
+          const keepHidden = mob.classList.contains('hidden');
+          mob.className = (t === tab
             ? "flex flex-col items-center gap-1 text-[#C41E3A] font-bold text-[11px] relative"
-            : "flex flex-col items-center gap-1 text-zinc-400 hover:text-white font-medium text-[11px] relative";
+            : "flex flex-col items-center gap-1 text-zinc-400 hover:text-white font-medium text-[11px] relative") + (keepHidden ? ' hidden' : '');
         }
       });
 

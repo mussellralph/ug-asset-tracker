@@ -64,6 +64,9 @@ function createPdf(data, signer, signatures) {
     const runTests = Array.isArray(data.runTests) ? data.runTests.slice(0, 12) : [];
     const controlTests = Array.isArray(data.controlTests) ? data.controlTests.slice(0, 8) : [];
     const parts = Array.isArray(data.parts) ? data.parts.slice(0, 20) : [];
+    const personnel = Array.isArray(data.personnel)
+      ? [...new Set(data.personnel.map(name => clean(name, 120)).filter(Boolean))].slice(0, 20)
+      : [];
 
     function heading(title) {
       if (doc.y > 730) doc.addPage();
@@ -129,6 +132,11 @@ function createPdf(data, signer, signatures) {
       ['Hour metre', data.hourMetre], ['Engine type', data.engineType],
       ['Alternator type', data.alternatorType]
     ]);
+
+    heading('Personnel on site');
+    doc.font('Helvetica').fontSize(9).fillColor(ink)
+      .text(personnel.length ? personnel.map((name, index) => `${index + 1}. ${name}`).join('\n') : 'None recorded', { width });
+    doc.moveDown(0.5);
 
     heading('Checks - mark each item normal or abnormal');
     listRows(checks.map(row => [row.label, row.result, row.notes]), [0.44, 0.20, 0.36]);

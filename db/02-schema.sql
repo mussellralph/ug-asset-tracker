@@ -108,6 +108,16 @@ CREATE TABLE IF NOT EXISTS public.job_cards (
 );
 REVOKE ALL ON public.job_cards FROM PUBLIC, anon, authenticated;
 
+-- Job card assistants are a separate roster from app login accounts.
+CREATE TABLE IF NOT EXISTS public.jobcard_personnel (
+  name TEXT PRIMARY KEY,
+  added_by TEXT REFERENCES public.staff_accounts(name) ON UPDATE CASCADE ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS jobcard_personnel_name_ci_idx ON public.jobcard_personnel (LOWER(name));
+ALTER TABLE public.jobcard_personnel ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.jobcard_personnel FROM PUBLIC, anon, authenticated;
+
 CREATE TABLE IF NOT EXISTS public.staff_sessions (
   token TEXT PRIMARY KEY,
   staff_name TEXT NOT NULL REFERENCES public.staff_accounts(name) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -389,6 +399,54 @@ BEGIN
   DELETE FROM public.staff_accounts WHERE name = p_name;
 END $$;
 
+CREATE OR REPLACE FUNCTION public.ug_list_jobcard_personnel(p_token TEXT)
+RETURNS TABLE(name TEXT)
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE acc public.staff_accounts;
+BEGIN
+  acc := public.ug_require_session(p_token);
+  RETURN QUERY SELECT p.name FROM public.jobcard_personnel p ORDER BY p.name;
+END $$;
+
+CREATE OR REPLACE FUNCTION public.ug_add_jobcard_personnel(p_token TEXT, p_name TEXT)
+RETURNS TEXT
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  acc public.staff_accounts;
+  clean_name TEXT;
+  saved_name TEXT;
+BEGIN
+  acc := public.ug_require_session(p_token);
+  clean_name := regexp_replace(btrim(COALESCE(p_name, '')), '\s+', ' ', 'g');
+  IF clean_name = '' OR char_length(clean_name) > 120 THEN
+    RAISE EXCEPTION 'UG_BAD_JOBCARD_PERSONNEL_NAME' USING ERRCODE = '22023';
+  END IF;
+  INSERT INTO public.jobcard_personnel (name, added_by)
+  VALUES (clean_name, acc.name)
+  ON CONFLICT DO NOTHING;
+  SELECT p.name INTO saved_name
+    FROM public.jobcard_personnel p
+   WHERE LOWER(p.name) = LOWER(clean_name)
+   LIMIT 1;
+  RETURN saved_name;
+END $$;
+
+CREATE OR REPLACE FUNCTION public.ug_delete_jobcard_personnel(p_token TEXT, p_name TEXT)
+RETURNS BOOLEAN
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  acc public.staff_accounts;
+  deleted_count INT;
+BEGIN
+  acc := public.ug_require_session(p_token);
+  IF acc.role IS DISTINCT FROM 'Master Admin' THEN
+    RAISE EXCEPTION 'UG_FORBIDDEN' USING ERRCODE = '42501';
+  END IF;
+  DELETE FROM public.jobcard_personnel WHERE LOWER(name) = LOWER(BTRIM(COALESCE(p_name, '')));
+  GET DIAGNOSTICS deleted_count = ROW_COUNT;
+  RETURN deleted_count > 0;
+END $$;
+
 -- ---------- Who may call what ----------
 REVOKE ALL ON FUNCTION public.ug_has_perm(TEXT, JSONB, TEXT) FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public.ug_require_session(TEXT, TEXT) FROM PUBLIC, anon, authenticated;
@@ -397,13 +455,17 @@ REVOKE ALL ON FUNCTION
   public.ug_list_staff(), public.ug_bootstrap_staff(JSONB), public.ug_login(TEXT, TEXT), public.ug_logout(TEXT),
   public.ug_get_tools(TEXT), public.ug_get_staff(TEXT), public.ug_get_logs(TEXT, INT),
   public.ug_upsert_tools(TEXT, JSONB), public.ug_delete_tool(TEXT, TEXT), public.ug_add_log(TEXT, JSONB),
-  public.ug_upsert_staff(TEXT, JSONB), public.ug_delete_staff(TEXT, TEXT)
+  public.ug_upsert_staff(TEXT, JSONB), public.ug_delete_staff(TEXT, TEXT),
+  public.ug_list_jobcard_personnel(TEXT), public.ug_add_jobcard_personnel(TEXT, TEXT),
+  public.ug_delete_jobcard_personnel(TEXT, TEXT)
 FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION
   public.ug_list_staff(), public.ug_bootstrap_staff(JSONB), public.ug_login(TEXT, TEXT), public.ug_logout(TEXT),
   public.ug_get_tools(TEXT), public.ug_get_staff(TEXT), public.ug_get_logs(TEXT, INT),
   public.ug_upsert_tools(TEXT, JSONB), public.ug_delete_tool(TEXT, TEXT), public.ug_add_log(TEXT, JSONB),
-  public.ug_upsert_staff(TEXT, JSONB), public.ug_delete_staff(TEXT, TEXT)
+  public.ug_upsert_staff(TEXT, JSONB), public.ug_delete_staff(TEXT, TEXT),
+  public.ug_list_jobcard_personnel(TEXT), public.ug_add_jobcard_personnel(TEXT, TEXT),
+  public.ug_delete_jobcard_personnel(TEXT, TEXT)
 TO anon, authenticated;
 
 NOTIFY pgrst, 'reload schema';

@@ -272,9 +272,26 @@ END $$;
 CREATE OR REPLACE FUNCTION public.ug_upsert_tools(p_token TEXT, p_rows JSONB)
 RETURNS INT
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE n INT;
+DECLARE
+  n INT;
+  acc public.staff_accounts;
 BEGIN
-  PERFORM public.ug_require_session(p_token);
+  acc := public.ug_require_session(p_token);
+
+  -- A checked-out tool may only be returned by its assigned holder, a Storeman,
+  -- or a Master Admin. Enforce this in the API as well as in the browser UI.
+  IF COALESCE(acc.role, '') NOT IN ('Master Admin', 'Storeman') AND EXISTS (
+    SELECT 1
+      FROM jsonb_populate_recordset(NULL::public.tools, p_rows) incoming
+      JOIN public.tools existing ON existing.id = incoming.id
+     WHERE existing.status = 'Checked Out'
+       AND existing.current_holder IS DISTINCT FROM acc.name
+       AND (incoming.status IS DISTINCT FROM existing.status
+            OR incoming.current_holder IS DISTINCT FROM existing.current_holder)
+  ) THEN
+    RAISE EXCEPTION 'UG_FORBIDDEN_RETURN' USING ERRCODE = '42501';
+  END IF;
+
   INSERT INTO public.tools AS t
     (id, name, category, status, condition, location, holder, current_holder, job_ref,
      checkout_date, checkout_time, expected_return, notes, condition_notes, updated_at)

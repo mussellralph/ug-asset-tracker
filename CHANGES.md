@@ -1,3 +1,4 @@
+Warning: fs was declared with const; use let for reassignable variables.
 # What changed, and why
 
 **For:** the original author of the Ultimate Group Asset & Tool Management Tracker
@@ -19,6 +20,7 @@ The app looks and works the same for staff: same screens, scanner, check-out/ret
 | 5 | **Permissions are enforced by the server**, not just hidden buttons | E.g. only "Edit Assets" users can delete assets, and only Master Admins can change staff/PINs, even if someone tampers with the page. |
 | 6 | **Deletions only happen when someone actually deletes** | A phone with an old list could re-delete re-imported assets or bring deleted ones back. |
 | 7 | The app is packaged as **Docker images built automatically from GitHub** | Updating the server is now "push to GitHub → click Update in TrueNAS". No copying files around. |
+| 8 | **Technicians can only return tools assigned to themselves**; Storemen and Master Admins can return tools for others | The rule is enforced in the app and in the database API, so a direct API request cannot bypass the screen restriction. |
 
 ---
 

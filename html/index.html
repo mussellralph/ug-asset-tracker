@@ -2828,6 +2828,12 @@
     }
 
     function openActionModal(tool) {
+      const canReturnForOthers = currentUser && ['Master Admin', 'Storeman'].includes(currentUser.role);
+      if (tool.status === 'Checked Out' && currentUser && tool.currentHolder !== currentUser.name && !canReturnForOthers) {
+        showToast("You can only return tools assigned to you", "error");
+        return;
+      }
+
       activeModalTool = tool;
       populateStaffDropdown();
 
@@ -3029,6 +3035,12 @@
           ? `Dispatched ${tools[targetIndex].id} to ${employee} (Start Odo: ${updatedOdo.toLocaleString()} km)`
           : `Signed out ${tools[targetIndex].id} to ${employee} for ${durationDays} day(s)`);
       } else {
+        const canReturnForOthers = currentUser && ['Master Admin', 'Storeman'].includes(currentUser.role);
+        if (!currentUser || (tools[targetIndex].currentHolder !== currentUser.name && !canReturnForOthers)) {
+          showToast("You can only return tools assigned to you", "error");
+          return;
+        }
+
         const returningTech = tools[targetIndex].currentHolder || (currentUser ? currentUser.name : 'Technician');
         const prevJob = tools[targetIndex].jobRef || 'Returned to Store';
         const prevCheckoutTime = tools[targetIndex].checkoutTime || new Date().toISOString();

@@ -562,7 +562,7 @@
             <h3 class="text-base font-bold text-white flex items-center gap-2">
               <i class="fa-solid fa-book-open text-emerald-400"></i> Official Vehicle Odometer &amp; Trip Mileage Logbook
             </h3>
-            <p class="text-xs text-zinc-400">Audit-ready SARS &amp; management mileage report with driver, job card, start/end KM, and fuel level</p>
+            <p class="text-xs text-zinc-400">Audit-ready SARS &amp; management mileage report with driver, job number, start/end KM, and fuel level</p>
           </div>
           <div class="flex flex-wrap items-center gap-2">
             <button onclick="exportMileageLogCsv()" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold rounded-lg text-xs flex items-center gap-1.5 shadow transition">
@@ -586,7 +586,7 @@
             <option value="Materials Collection">Materials Collection</option>
             <option value="Private / Commute">Private / Commute</option>
           </select>
-          <input type="text" id="fleet-filter-search" oninput="renderFleetAndMileageView()" placeholder="Search job card, reg #, or notes..." class="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-[#C41E3A]" />
+          <input type="text" id="fleet-filter-search" oninput="renderFleetAndMileageView()" placeholder="Search job number, reg #, or notes..." class="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-[#C41E3A]" />
         </div>
 
         <div class="overflow-x-auto rounded-xl border border-zinc-800">
@@ -596,7 +596,7 @@
                 <th class="py-3 px-3">Date / Time (Out &rarr; In)</th>
                 <th class="py-3 px-3">Vehicle &amp; Reg</th>
                 <th class="py-3 px-3">Driver</th>
-                <th class="py-3 px-3">Job / Site &amp; Trip Type</th>
+                <th class="py-3 px-3">Job Number / Site &amp; Trip Type</th>
                 <th class="py-3 px-3 text-right">Start KM</th>
                 <th class="py-3 px-3 text-right">Closing KM</th>
                 <th class="py-3 px-3 text-right">Distance</th>
@@ -931,7 +931,7 @@
     </button>
     <button onclick="switchTab('fleet')" id="mob-nav-fleet" class="flex flex-col items-center gap-1 text-zinc-400 hover:text-white font-medium text-[11px]">
       <i class="fa-solid fa-truck-pickup text-lg"></i>
-      <span>Fleet KM</span>
+      <span>Fleet</span>
     </button>
     <button onclick="switchTab('master')" id="mob-nav-master" class="flex flex-col items-center gap-1 text-zinc-400 hover:text-white font-medium text-[11px]">
       <i class="fa-solid fa-user-shield text-lg"></i>
@@ -992,7 +992,7 @@
 
           <div>
             <label class="block text-xs font-medium text-zinc-300 mb-1">
-              Job Card / Site Allocation <span class="text-[#C41E3A]">*</span>
+              Job Number / Site Allocation <span class="text-[#C41E3A]">*</span>
             </label>
             <input type="text" id="checkout-job" required placeholder="e.g., JOB-4082 - Umhlanga Commercial Install" class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#C41E3A]" />
           </div>
@@ -3466,7 +3466,7 @@
         "Vehicle Description",
         "Driver / Technician",
         "Trip Classification",
-        "Job / Site Allocation",
+        "Job Number / Site Allocation",
         "Sign-Out Timestamp",
         "Sign-In Timestamp",
         "Starting Odometer (km)",

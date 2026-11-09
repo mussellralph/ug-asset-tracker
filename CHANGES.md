@@ -1,4 +1,3 @@
-Warning: fs was declared with const; use let for reassignable variables.
 # What changed, and why
 
 **For:** the original author of the Ultimate Group Asset & Tool Management Tracker

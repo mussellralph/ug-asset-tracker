@@ -33,7 +33,7 @@ services:
       retries: 20
 
   migrate:
-    image: ghcr.io/cunningsquirrel/ug-asset-tracker-migrate:latest
+    image: ghcr.io/mussellralph/ug-asset-tracker-migrate:latest
     pull_policy: always
     restart: "no"
     depends_on:
@@ -60,7 +60,7 @@ services:
       PGRST_OPENAPI_MODE: disabled
 
   web:
-    image: ghcr.io/cunningsquirrel/ug-asset-tracker-web:latest
+    image: ghcr.io/mussellralph/ug-asset-tracker-web:latest
     pull_policy: always
     restart: unless-stopped
     depends_on:

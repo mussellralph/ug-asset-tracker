@@ -119,11 +119,11 @@ This was tested with two "devices" side by side: delete on one, check out on the
 
 ## 7. Packaging, GitHub and updates
 
-- **GitHub repo** (private): `CunningSquirrel/ug-asset-tracker`
+- **GitHub repo** (public): `mussellralph/ug-asset-tracker`
 - On every push to `main`, **GitHub Actions** (`.github/workflows/publish-images.yml`) builds two images and publishes them to GitHub Container Registry:
-  - `ghcr.io/cunningsquirrel/ug-asset-tracker-web` (nginx + `index.html`)
-  - `ghcr.io/cunningsquirrel/ug-asset-tracker-migrate` (the `db/` scripts)
-- These two images are **public** so TrueNAS can download them without a login. The code repo itself stays private. Anyone could download the images, which include the default staff name list.
+  - `ghcr.io/mussellralph/ug-asset-tracker-web` (nginx + `index.html`)
+  - `ghcr.io/mussellralph/ug-asset-tracker-migrate` (the `db/` scripts)
+- These two images are **public** so TrueNAS can download them without a login. The source repo is currently public too. Keep passwords, API keys and live PINs out of the repository and images.
 - **To update the live app:** commit + push → wait for the green tick in GitHub Actions → TrueNAS → Apps → ug-asset-tracker → Update (or Edit → Save).
 - **To roll back:** every build is also tagged with its commit ID. Change `:latest` in the TrueNAS YAML to a known-good ID.
 
@@ -151,7 +151,7 @@ Passwords and the first Master Admin PIN for each server are kept outside this p
 | `truenas-app.yaml` | Template to install on TrueNAS (passwords are `CHANGE_ME` placeholders) |
 | `README-TRUENAS.md` | Step-by-step server install, updates, backups, Cloudflare |
 | `CHANGES.md` | This file |
-| `HANDOVER.md` | Checklist for taking over the app from Kyle (GitHub, TrueNAS, Cloudflare, passwords) |
+| `HANDOVER.md` | Current ownership, deployment and maintenance notes |
 | `original/` | (export only) your original HTML, for comparison |
 
 ## How to play around with it

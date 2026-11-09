@@ -20,10 +20,10 @@ IT only (office LAN) ───────────────────�
 
 ## Where the code lives
 
-The code lives in the private GitHub repo **CunningSquirrel/ug-asset-tracker**. Every push to `main` makes GitHub Actions build two images and publish them (publicly) to GitHub Container Registry:
+The code lives in the GitHub repo **mussellralph/ug-asset-tracker**, which is currently public. Every push to `main` makes GitHub Actions build two images and publish them (publicly) to GitHub Container Registry:
 
-- `ghcr.io/cunningsquirrel/ug-asset-tracker-web`: nginx + the app
-- `ghcr.io/cunningsquirrel/ug-asset-tracker-migrate`: the database setup scripts
+- `ghcr.io/mussellralph/ug-asset-tracker-web`: nginx + the app
+- `ghcr.io/mussellralph/ug-asset-tracker-migrate`: the database setup scripts
 
 TrueNAS just pulls those images, so there are no files to copy to the server. The only thing stored on TrueNAS is the database (`pgdata`).
 
@@ -53,9 +53,9 @@ ug-asset-tracker/
 
 ## Step 2: Image access
 
-The two images on GitHub Container Registry are **public**, so TrueNAS pulls them without a login. The source repo stays private. Note that anyone can download the images, including the default staff name list.
+The two images on GitHub Container Registry are **public**, so TrueNAS pulls them without a login. The source repo is currently public too. Keep credentials out of the repository.
 
-If they are ever made private again, add a registry login in TrueNAS → **Apps** → **Configuration** → **Manage Container Image Registries**: URI `ghcr.io`, username `CunningSquirrel`, password a GitHub token with only `read:packages`.
+If they are ever made private again, add a registry login in TrueNAS → **Apps** → **Configuration** → **Manage Container Image Registries**: URI `ghcr.io`, username `mussellralph`, password a GitHub token with only `read:packages`.
 
 ## Step 3: Edit the YAML
 

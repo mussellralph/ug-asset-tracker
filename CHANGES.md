@@ -20,6 +20,7 @@ The app looks and works the same for staff: same screens, scanner, check-out/ret
 | 6 | **Deletions only happen when someone actually deletes** | A phone with an old list could re-delete re-imported assets or bring deleted ones back. |
 | 7 | The app is packaged as **Docker images built automatically from GitHub** | Updating the server is now "push to GitHub → click Update in TrueNAS". No copying files around. |
 | 8 | **Technicians can only return tools assigned to themselves**; Storemen and Master Admins can return tools for others | The rule is enforced in the app and in the database API, so a direct API request cannot bypass the screen restriction. |
+| 9 | **The login screen remembers the last successfully signed-in profile on each device** | Only the profile name is stored in that browser's local storage; PINs are never remembered, and other devices are unaffected. |
 
 ---
 

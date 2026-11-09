@@ -1509,6 +1509,7 @@
     let detectedToolsColumns = null;
     // Track local modifications by tool ID so background server syncs never revert a newly signed-out or returned tool
     const localToolLockTimestamps = {};
+    const LAST_LOGIN_STAFF_KEY = 'ug_last_login_staff_v1';
 
     // The hosted app always uses the database API on its own origin. Opening the
     // HTML file directly keeps the local-only browser storage mode.
@@ -1623,6 +1624,8 @@
       const select = document.getElementById('login-staff-select');
       if (!select) return;
       const currentVal = select.value;
+      let rememberedName = '';
+      try { rememberedName = localStorage.getItem(LAST_LOGIN_STAFF_KEY) || ''; } catch (e) {}
       select.innerHTML = '<option value="">Choose your name...</option>';
 
       const activeStaff = staffAccounts.filter(s => s.active !== false);
@@ -1635,8 +1638,9 @@
         select.appendChild(opt);
       });
 
-      if (currentVal && activeStaff.some(s => s.name === currentVal)) {
-        select.value = currentVal;
+      const preferredName = currentVal || rememberedName;
+      if (preferredName && activeStaff.some(s => s.name === preferredName)) {
+        select.value = preferredName;
       }
     }
 
@@ -1790,6 +1794,7 @@
 
       currentUser = account;
       impersonatedRole = null;
+      try { localStorage.setItem(LAST_LOGIN_STAFF_KEY, account.name); } catch (e) {}
       sessionStorage.setItem('ug_active_user_v4', JSON.stringify(currentUser));
       if (pinInputEl) pinInputEl.value = '';
       document.getElementById('auth-gate-overlay').classList.add('hidden');

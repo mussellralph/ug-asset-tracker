@@ -5,7 +5,7 @@
 #   * Replace every CHANGE_ME value (letters and numbers only).
 #       CHANGE_ME_postgres_password appears 3 times, CHANGE_ME_api_password 2 times; keep each set identical.
 #   * Set INITIAL_ADMIN_PIN (Russell Ralph's first PIN).
-#   * Change /mnt/tank/apps/ug-asset-tracker/pgdata if your dataset path is different.
+#   * Keep /mnt/SmartHome/Apps/ug-asset-tracker/pgdata unchanged on the current TrueNAS install.
 #
 # UPDATING: push changes to GitHub → GitHub Actions publishes new images → in TrueNAS, open the app
 # and click Update/Redeploy (or Edit → Save). pull_policy: always fetches the newest images.
@@ -25,7 +25,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: CHANGE_ME_postgres_password
     volumes:
-      - /mnt/tank/apps/ug-asset-tracker/pgdata:/var/lib/postgresql/data
+      - /mnt/SmartHome/Apps/ug-asset-tracker/pgdata:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d ugtracker"]
       interval: 5s
@@ -59,14 +59,28 @@ services:
       PGRST_DB_ANON_ROLE: anon
       PGRST_OPENAPI_MODE: disabled
 
+  jobcards:
+    image: ghcr.io/mussellralph/ug-asset-tracker-jobcards:latest
+    pull_policy: always
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: postgresql://postgres:CHANGE_ME_postgres_password@db:5432/ugtracker
+      JOBCARDS_DIR: /jobcards
+    volumes:
+      - /mnt/SmartHome/Jobcards:/jobcards
+
   web:
     image: ghcr.io/mussellralph/ug-asset-tracker-web:latest
     pull_policy: always
     restart: unless-stopped
     depends_on:
       - api
+      - jobcards
     ports:
-      - "30080:80"
+      - "30090:80"
 
   adminer:
     image: adminer:4.8.1
@@ -76,4 +90,4 @@ services:
     environment:
       ADMINER_DEFAULT_SERVER: db
     ports:
-      - "30081:8080"
+      - "30091:8080"

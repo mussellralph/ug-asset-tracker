@@ -1,5 +1,5 @@
-# Builds the web and migrate images and publishes them to GitHub Container Registry
-# on every push to main. TrueNAS pulls ghcr.io/<owner>/ug-asset-tracker-{web,migrate}:latest.
+# Builds the web, migrate and jobcards images and publishes them to GitHub Container Registry
+# on every push to main. TrueNAS pulls ghcr.io/<owner>/ug-asset-tracker-{web,migrate,jobcards}:latest.
 name: Publish images
 
 on:
@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        image: [web, migrate]
+        image: [web, migrate, jobcards]
     steps:
       - uses: actions/checkout@v4
 

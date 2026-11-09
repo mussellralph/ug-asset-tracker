@@ -1,3 +1,4 @@
 pgdata
+jobcards-storage
 *.bak
 .git

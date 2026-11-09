@@ -1,6 +1,6 @@
 # Owner and deployment operations
 
-This project is maintained by the GitHub account `mussellralph`. The repository is `mussellralph/ug-asset-tracker`; GitHub Actions builds the web and database migration images on every push to `main`.
+This project is maintained by the GitHub account `mussellralph`. The repository is `mussellralph/ug-asset-tracker`; GitHub Actions builds the web, database migration and job-card images on every push to `main`.
 
 ## Current deployment
 
@@ -9,8 +9,10 @@ This project is maintained by the GitHub account `mussellralph`. The repository 
 | GitHub repository | `https://github.com/mussellralph/ug-asset-tracker` |
 | Web image | `ghcr.io/mussellralph/ug-asset-tracker-web` |
 | Migration image | `ghcr.io/mussellralph/ug-asset-tracker-migrate` |
+| Job card image | `ghcr.io/mussellralph/ug-asset-tracker-jobcards` |
 | Live TrueNAS app | `10.0.0.11`, ports `30090` (app) and `30091` (Adminer, LAN only) |
 | Database data | `/mnt/SmartHome/Apps/ug-asset-tracker/pgdata` |
+| Signed job-card PDFs | `/mnt/SmartHome/Jobcards/{SINABO,UES,USS}` (SINABO form enabled first) |
 | Public hostname | `ultimate-group.app`, Cloudflare Tunnel `ug-assets` to `http://10.0.0.11:30090` |
 | Test install | `10.0.0.5`, ports `30080` and `30081`, separate database |
 
@@ -22,12 +24,12 @@ The stopped `ug-tracking-app` on `10.0.0.11` shares the live database folder. Ne
 
 1. Work in the local Git checkout and keep changes on a branch or commit on `main` as appropriate.
 2. For local development, run `docker compose up -d --build` and open `http://localhost:30080`. The local stack uses test credentials from `docker-compose.yml`; do not reuse them on the live server.
-3. Push the reviewed change to GitHub. The `Publish images` workflow builds and publishes both images, tagged `latest` and with the commit SHA.
+3. Push the reviewed change to GitHub. The `Publish images` workflow builds and publishes all images, tagged `latest` and with the commit SHA.
 4. Confirm the GitHub Actions run succeeds.
-5. In TrueNAS, update or redeploy the `ug-asset-tracker` app. Keep its database passwords, published ports and `/mnt/SmartHome/Apps/ug-asset-tracker/pgdata` mount unchanged.
+5. In TrueNAS, update or redeploy the `ug-asset-tracker` app. Keep its database passwords, published ports, `/mnt/SmartHome/Apps/ug-asset-tracker/pgdata` mount and `/mnt/SmartHome/Jobcards:/jobcards` mount unchanged.
 6. Confirm the app is running, sign-in works, and the inventory and activity log are present. The `migrate` container normally exits after applying migrations.
 
-For rollback, set both image tags in the TrueNAS YAML to the same known-good commit SHA, then redeploy. Do not change the persistent database volume when rolling back.
+For rollback, set the web, migration and job-card image tags in the TrueNAS YAML to the same known-good commit SHA, then redeploy. Do not change the persistent database or Jobcards volumes when rolling back.
 
 ## Backups and access
 

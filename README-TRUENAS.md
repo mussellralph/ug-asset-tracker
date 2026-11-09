@@ -3,15 +3,15 @@
 Self-hosted version: the app and its database both run on our TrueNAS server.
 Supabase and Netlify are no longer used.
 
-> **Current install:** TrueNAS **10.0.0.11** → app on port **30090**, Adminer on **30091** (30080 is taken by `haos-monitoring` there). The examples below use the template's default ports 30080/30081 and `10.0.0.5`; substitute as needed. What changed from the original Netlify version, and why, is in **CHANGES.md**. Handing the app to a new owner: **HANDOVER.md**.
+> **Current install:** TrueNAS **10.0.0.11** → app on port **30090**, Adminer on **30091** (30080 is taken by `haos-monitoring` there). The YAML below uses the live server ports 30090/30091 and the persistent database and Jobcards paths. What changed from the original Netlify version, and why, is in **CHANGES.md**. Handing the app to a new owner: **HANDOVER.md**.
 
 ## How it fits together
 
 ```text
-Staff phone / PC ──HTTPS──► Cloudflare ──► TrueNAS :30080  web (nginx)
+Staff phone / PC ──HTTPS──► Cloudflare ──► TrueNAS :30090  web (nginx)
                                                  ├─ /           → the app (html/index.html)
                                                  └─ /rest/v1/   → api (PostgREST) → db (PostgreSQL)
-IT only (office LAN) ─────────────────────► TrueNAS :30081  Adminer (database viewer)
+IT only (office LAN) ─────────────────────► TrueNAS :30091  Adminer (database viewer)
 ```
 
 - **Day-to-day management happens inside the app.** Add or remove assets in **Inventory**, and manage staff, roles and PINs in **Master Control**. Nobody needs a database tool.
@@ -20,12 +20,13 @@ IT only (office LAN) ───────────────────�
 
 ## Where the code lives
 
-The code lives in the GitHub repo **mussellralph/ug-asset-tracker**, which is currently public. Every push to `main` makes GitHub Actions build two images and publish them (publicly) to GitHub Container Registry:
+The code lives in the GitHub repo **mussellralph/ug-asset-tracker**, which is currently public. Every push to `main` makes GitHub Actions build three images and publish them (publicly) to GitHub Container Registry:
 
 - `ghcr.io/mussellralph/ug-asset-tracker-web`: nginx + the app
 - `ghcr.io/mussellralph/ug-asset-tracker-migrate`: the database setup scripts
+- `ghcr.io/mussellralph/ug-asset-tracker-jobcards`: signed job-card PDF creation and TrueNAS folder upload
 
-TrueNAS just pulls those images, so there are no files to copy to the server. The only thing stored on TrueNAS is the database (`pgdata`).
+TrueNAS pulls those images. The app database lives in `pgdata`; signed job-card PDFs are written to `/mnt/SmartHome/Jobcards/<COMPANY>/` on the configured host share. Ensure the share permissions allow the app container to create files there.
 
 ```text
 ug-asset-tracker/
@@ -45,15 +46,15 @@ ug-asset-tracker/
 
 ---
 
-## Step 1: Create a dataset for the database
+## Step 1: Confirm the persistent TrueNAS folders
 
-1. TrueNAS → **Datasets** → select your pool → **Add Dataset**.
-2. Name: `ug-asset-tracker` (e.g. under `tank/apps`). Choose the **Apps** dataset preset.
-3. The database will live in `/mnt/tank/apps/ug-asset-tracker/pgdata`. Postgres creates that folder on first start.
+Keep the existing database directory mounted unchanged at `/mnt/SmartHome/Apps/ug-asset-tracker/pgdata`. This preserves the live staff, inventory and transaction data.
+
+Signed job-card PDFs are saved beneath the existing `/mnt/SmartHome/Jobcards` folder, separated by company.
 
 ## Step 2: Image access
 
-The two images on GitHub Container Registry are **public**, so TrueNAS pulls them without a login. The source repo is currently public too. Keep credentials out of the repository.
+The images on GitHub Container Registry are **public**, so TrueNAS pulls them without a login. The source repo is currently public too. Keep credentials out of the repository.
 
 If they are ever made private again, add a registry login in TrueNAS → **Apps** → **Configuration** → **Manage Container Image Registries**: URI `ghcr.io`, username `mussellralph`, password a GitHub token with only `read:packages`.
 
@@ -66,7 +67,8 @@ Open `truenas-app.yaml` and change:
 | `CHANGE_ME_postgres_password` (appears **3 times**, keep them identical) | A long random password, letters and numbers only |
 | `CHANGE_ME_api_password` (appears **2 times**, keep them identical) | A different long random password, letters and numbers only |
 | `INITIAL_ADMIN_PIN` | The 4-digit PIN Russell Ralph (Master Admin) will use on first sign-in |
-| `/mnt/tank/apps/ug-asset-tracker/pgdata` | Your real dataset path, if different |
+| `/mnt/SmartHome/Apps/ug-asset-tracker/pgdata` | Keep this existing live database path unchanged |
+| `/mnt/SmartHome/Jobcards` | The existing TrueNAS share used for signed PDF job cards; keep this host path mounted to `/jobcards` |
 
 Store both passwords in the company password manager. **Don't commit the edited copy to GitHub.**
 
@@ -75,7 +77,7 @@ Store both passwords in the company password manager. **Don't commit the edited 
 1. TrueNAS → **Apps** → **Discover Apps** → top-right **⋮** → **Install via YAML**.
 2. Name: `ug-asset-tracker`. Paste the edited YAML and click **Save**.
 3. Wait until the app shows **Running**. The `migrate` container will show as **Exited**; that's normal, because it sets up the database and then stops.
-4. Open `http://10.0.0.5:30080` on the office network.
+4. Open `http://10.0.0.11:30090` on the office network.
 
 ## Step 5: First sign-in (Master Admin)
 
@@ -89,8 +91,8 @@ Store both passwords in the company password manager. **Don't commit the edited 
 Recommended: **Cloudflare Tunnel**, which needs no router port forwarding and gives automatic HTTPS.
 1. In the Cloudflare dashboard: **Zero Trust → Networks → Tunnels → Create tunnel** (cloudflared). Copy the token.
 2. On TrueNAS, install the **Cloudflared** app from Discover Apps and paste the token.
-3. Add a public hostname in the tunnel, e.g. `tools.yourdomain.co.za` → service `http://10.0.0.5:30080`.
-4. **Only route port 30080.** Never publish 30081 (Adminer).
+3. Add a public hostname in the tunnel, e.g. `tools.yourdomain.co.za` → service `http://10.0.0.11:30090`.
+4. **Only route port 30090.** Never publish 30091 (Adminer).
 5. Optional extra layer: **Zero Trust → Access → Applications** can require staff to confirm their work email before the page loads.
 
 ---
@@ -99,7 +101,7 @@ Recommended: **Cloudflare Tunnel**, which needs no router port forwarding and gi
 
 1. Make changes in the repo. Test locally with `docker compose up -d --build` → http://localhost:30080.
 2. Commit and push to `main`. In GitHub → **Actions**, wait for **Publish images** to go green (about 2–4 minutes).
-3. TrueNAS → **Apps** → `ug-asset-tracker` → **Update** if offered. Otherwise **Edit** → **Save**, which redeploys. `pull_policy: always` makes it fetch the newest `web` and `migrate` images, and `migrate` applies any database changes without touching data.
+3. TrueNAS → **Apps** → `ug-asset-tracker` → **Update** if offered. Otherwise **Edit** → **Save**, which redeploys. `pull_policy: always` makes it fetch the newest `web`, `migrate` and `jobcards` images; `migrate` applies database changes without touching data.
 
 **Rolling back:** every build is also tagged with its commit id. In the YAML, change `:latest` to `:<commit-sha>` from a known-good build and save.
 
@@ -110,7 +112,7 @@ Recommended: **Cloudflare Tunnel**, which needs no router port forwarding and gi
 
 ## Adminer (IT only)
 
-`http://10.0.0.5:30081`: System **PostgreSQL**, Server `db`, Username `postgres`, the postgres password, Database `ugtracker`.
+`http://10.0.0.11:30091`: System **PostgreSQL**, Server `db`, Username `postgres`, the postgres password, Database `ugtracker`.
 Use it for imports, exports and fixes. Editing data here skips the app's checks, so prefer the app for normal changes.
 
 ## Moving data across from the old Supabase version

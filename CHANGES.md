@@ -4,6 +4,8 @@
 **Date:** 6 November 2026
 **Starting point:** `asset_and_tool_management_tracker.html` (the Netlify + Supabase version), included in the export as `original/`
 
+**Latest update:** 9 November 2026. Added a signed SINABO job-card workflow with local drafts, an offline upload queue and a status log. Successful submissions are rendered as PDFs and saved under `/mnt/SmartHome/Jobcards/SINABO`. UES and USS remain listed until their manual forms are supplied. Fleet mileage entries now reflow as cards on phones, the mobile logo is centered, and Go-Live is limited to the Master Admin role.
+
 The app looks and works the same for staff: same screens, scanner, check-out/return, fleet mileage and Master Control. What changed is **where it runs**, **how sign-in is secured**, and **how updates are shipped**.
 
 ---
@@ -122,10 +124,11 @@ This was tested with two "devices" side by side: delete on one, check out on the
 ## 7. Packaging, GitHub and updates
 
 - **GitHub repo** (public): `mussellralph/ug-asset-tracker`
-- On every push to `main`, **GitHub Actions** (`.github/workflows/publish-images.yml`) builds two images and publishes them to GitHub Container Registry:
+- On every push to `main`, **GitHub Actions** (`.github/workflows/publish-images.yml`) builds three images and publishes them to GitHub Container Registry:
   - `ghcr.io/mussellralph/ug-asset-tracker-web` (nginx + `index.html`)
   - `ghcr.io/mussellralph/ug-asset-tracker-migrate` (the `db/` scripts)
-- These two images are **public** so TrueNAS can download them without a login. The source repo is currently public too. Keep passwords, API keys and live PINs out of the repository and images.
+  - `ghcr.io/mussellralph/ug-asset-tracker-jobcards` (signed job-card PDFs and TrueNAS share uploads)
+- These images are **public** so TrueNAS can download them without a login. The source repo is currently public too. Keep passwords, API keys and live PINs out of the repository and images.
 - **To update the live app:** commit + push → wait for the green tick in GitHub Actions → TrueNAS → Apps → ug-asset-tracker → Update (or Edit → Save).
 - **To roll back:** every build is also tagged with its commit ID. Change `:latest` in the TrueNAS YAML to a known-good ID.
 
@@ -147,7 +150,7 @@ Passwords and the first Master Admin PIN for each server are kept outside this p
 | `db/02-schema.sql` | Tables + all secure functions (safe to re-run) |
 | `db/03-seed.sql` | First-run staff roster |
 | `db/migrate.sh` | Runs the three scripts on every start |
-| `docker/*.Dockerfile` | How the two images are built |
+| `docker/*.Dockerfile` | How the web, migration and job-card images are built |
 | `nginx.conf` | Web server settings (serves the app, forwards `/rest/v1/` to the API, no caching) |
 | `docker-compose.yml` | **Run the whole thing on a PC/Mac** with Docker |
 | `truenas-app.yaml` | Template to install on TrueNAS (passwords are `CHANGE_ME` placeholders) |

@@ -1,4 +1,5 @@
 pgdata/
+jobcards-storage/
 *.bak
 .DS_Store
 New Text Document.txt

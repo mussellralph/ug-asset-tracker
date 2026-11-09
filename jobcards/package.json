@@ -1,0 +1,10 @@
+{
+  "name": "ug-asset-tracker-jobcards",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Signed job card PDF submission service",
+  "dependencies": {
+    "pdfkit": "0.16.0",
+    "pg": "8.13.1"
+  }
+}

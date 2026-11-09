@@ -57,6 +57,14 @@
     }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .jobcard-input { display:block; width:100%; margin-top:0.35rem; border:1px solid #3f3f46; border-radius:0.6rem; background:#09090b; color:#fafafa; padding:0.65rem 0.75rem; font-size:0.875rem; }
+    .jobcard-input:focus { outline:none; border-color:#fbbf24; }
+    .jobcard-signature { display:block; width:100%; height:150px; border:1px dashed #52525b; border-radius:0.75rem; background:#fff; touch-action:none; }
+    @media (max-width: 639px) {
+      .mobile-header-layout { flex-direction: column; justify-content: center; gap: 0.5rem; }
+      .mobile-brand-lockup { width: 100%; justify-content: center; }
+      .mobile-header-actions { width: 100%; justify-content: center; flex-wrap: wrap; }
+    }
 
     @media (max-width: 1023px) {
       .mobile-activity-table { min-width: 720px; }
@@ -176,10 +184,10 @@
 
   <!-- TOP CORPORATE HEADER WITH ULTIMATE GROUP LOGO -->
   <header class="sticky top-0 z-40 bg-[#18181B]/95 backdrop-blur-md border-b-2 border-[#C41E3A] px-4 py-2.5 shadow-xl">
-    <div class="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-3">
+    <div class="mobile-header-layout max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-3">
       
       <!-- Brand Logo Lockup -->
-      <div class="flex items-center space-x-3">
+      <div class="mobile-brand-lockup flex items-center space-x-3">
         <div class="bg-white px-3.5 py-1.5 rounded-xl shadow-md border border-slate-200 flex items-center">
           <svg viewBox="0 0 500 142" class="h-9 sm:h-11 w-auto" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ULTIMATE GROUP Logo">
             <path d="M 52 14 V 74 C 52 93 62 103 77 103 C 92 103 102 93 102 74 V 14 H 88 V 73 C 88 84 84 90 77 90 C 70 90 66 84 66 73 V 14 Z" fill="#1F1B1C"/>
@@ -206,7 +214,7 @@
       </div>
       
       <!-- Right Status, User Badge & Overdue Alarm Pill -->
-      <div class="flex items-center gap-2">
+      <div class="mobile-header-actions flex items-center gap-2">
         <button type="button" id="header-server-pill" onclick="handleHeaderSyncClick()" aria-label="Synchronize with the server database" class="cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30 transition" title="Click to sync with the server database">
           <span id="header-server-dot" class="w-2 h-2 rounded-full bg-amber-400"></span>
           <span id="header-server-text" class="hidden md:inline">Local Mode</span>
@@ -244,6 +252,9 @@
       </button>
       <button onclick="switchTab('fleet')" id="tab-btn-fleet" class="flex-1 py-2.5 px-4 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition duration-150 text-zinc-400 hover:text-white hover:bg-zinc-800/70">
         <i class="fa-solid fa-truck-pickup text-sky-400"></i> Fleet &amp; Mileage (<span id="nav-fleet-count">3</span>)
+      </button>
+      <button onclick="switchTab('jobcards')" id="tab-btn-jobcards" class="flex-1 py-2.5 px-3 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition duration-150 text-zinc-400 hover:text-white hover:bg-zinc-800/70">
+        <i class="fa-solid fa-file-signature text-amber-400"></i> Job Cards
       </button>
       <button onclick="switchTab('master')" id="tab-btn-master" class="flex-1 py-2.5 px-4 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition duration-150 text-zinc-400 hover:text-white hover:bg-zinc-800/70">
         <i class="fa-solid fa-user-shield text-[#ff4d6d]"></i> Master Control (<span id="header-staff-count">36</span>)
@@ -559,7 +570,7 @@
       </div>
 
       <!-- Mileage Logbook & Reporting Table -->
-      <div class="bg-[#18181B] border border-zinc-800 rounded-2xl p-5 shadow-xl space-y-4">
+      <div class="bg-[#18181B] border border-zinc-800 rounded-2xl p-3 sm:p-5 shadow-xl space-y-4">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-zinc-800 pb-4">
           <div>
             <h3 class="text-base font-bold text-white flex items-center gap-2">
@@ -592,8 +603,7 @@
           <input type="text" id="fleet-filter-search" oninput="renderFleetAndMileageView()" placeholder="Search job number, reg #, or notes..." class="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-[#C41E3A]" />
         </div>
 
-        <div class="overflow-x-auto rounded-xl border border-zinc-800">
-          <p class="px-3 py-2 text-[10px] text-zinc-500 lg:hidden">Swipe sideways to view all columns.</p>
+        <div class="hidden lg:block overflow-x-auto rounded-xl border border-zinc-800">
           <table class="w-full text-left text-xs mobile-mileage-table">
             <thead class="bg-zinc-950 text-zinc-400 border-b border-zinc-800 uppercase font-mono text-[10px]">
               <tr>
@@ -611,6 +621,7 @@
             <tbody id="mileage-logbook-tbody" class="divide-y divide-zinc-800/80 text-zinc-300 font-mono"></tbody>
           </table>
         </div>
+        <div id="mileage-logbook-mobile-cards" class="lg:hidden space-y-3"></div>
       </div>
     </section>
 
@@ -736,7 +747,117 @@
       </div>
     </section>
 
-    <!-- SECTION 4: SERVER DATABASE SYNC & DIAGNOSTICS -->
+    <!-- SECTION 4: COMPANY JOB CARDS -->
+    <section id="view-jobcards" class="hidden space-y-5">
+      <div class="bg-[#18181B] border border-zinc-800 rounded-2xl p-4 sm:p-5 shadow-xl space-y-5">
+        <div class="flex flex-wrap items-start justify-between gap-3 border-b border-zinc-800 pb-4">
+          <div>
+            <h2 class="text-lg font-bold text-white flex items-center gap-2"><i class="fa-solid fa-file-signature text-amber-400"></i> Job Cards</h2>
+            <p class="text-xs text-zinc-400 mt-1">Create a signed service schedule and send the PDF to the company folder.</p>
+          </div>
+          <span id="jobcard-queue-badge" class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-zinc-800 text-zinc-300">No pending uploads</span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2" role="group" aria-label="Choose company">
+          <button type="button" onclick="selectJobCardCompany('SINABO')" id="jobcard-company-sinabo" class="text-left rounded-xl border border-amber-400 bg-amber-400/10 p-3 transition">
+            <span class="block text-sm font-extrabold text-white">SINABO</span><span class="text-[11px] text-zinc-400">Generators · Available</span>
+          </button>
+          <button type="button" disabled class="text-left rounded-xl border border-zinc-800 bg-zinc-950/40 p-3 opacity-60 cursor-not-allowed">
+            <span class="block text-sm font-extrabold text-zinc-300">UES</span><span class="text-[11px] text-zinc-500">Ultimate Electrical Solutions · Template coming soon</span>
+          </button>
+          <button type="button" disabled class="text-left rounded-xl border border-zinc-800 bg-zinc-950/40 p-3 opacity-60 cursor-not-allowed">
+            <span class="block text-sm font-extrabold text-zinc-300">USS</span><span class="text-[11px] text-zinc-500">Ultimate Solar Systems · Template coming soon</span>
+          </button>
+        </div>
+
+        <form id="sinabo-jobcard-form" onsubmit="submitJobCard(event)" class="space-y-5">
+          <input type="hidden" id="jobcard-company" value="SINABO" />
+          <div class="rounded-xl border border-zinc-800 bg-zinc-950/50 p-3 sm:p-4">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-amber-300 mb-3">Service schedule details</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <label class="text-[11px] text-zinc-400">Service Schedule No. *<input id="jc-schedule" required maxlength="40" class="jobcard-input" autocomplete="off" /></label>
+              <label class="text-[11px] text-zinc-400">Date *<input id="jc-date" required type="date" class="jobcard-input" /></label>
+              <label class="text-[11px] text-zinc-400">Unit reference number<input id="jc-unit-ref" maxlength="100" class="jobcard-input" /></label>
+              <label class="text-[11px] text-zinc-400">Customer *<input id="jc-customer" required maxlength="200" class="jobcard-input" autocomplete="organization" /></label>
+              <label class="text-[11px] text-zinc-400">Order No.<input id="jc-order-no" maxlength="100" class="jobcard-input" /></label>
+              <label class="text-[11px] text-zinc-400">Site *<input id="jc-site" required maxlength="200" class="jobcard-input" /></label>
+              <label class="text-[11px] text-zinc-400">Hour metre<input id="jc-hour-metre" maxlength="80" class="jobcard-input" /></label>
+              <label class="text-[11px] text-zinc-400">Engine type<input id="jc-engine-type" maxlength="120" class="jobcard-input" /></label>
+              <label class="text-[11px] text-zinc-400">Alternator type<input id="jc-alternator-type" maxlength="120" class="jobcard-input" /></label>
+            </div>
+          </div>
+
+          <div class="rounded-xl border border-zinc-800 bg-zinc-950/50 p-3 sm:p-4">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-amber-300 mb-1">Generator checks</h3>
+            <p class="text-[10px] text-zinc-500 mb-3">Choose Normal or Abnormal for each check. Add a note if required.</p>
+            <div id="sinabo-checks" class="grid grid-cols-1 lg:grid-cols-2 gap-2"></div>
+          </div>
+
+          <div class="rounded-xl border border-zinc-800 bg-zinc-950/50 p-3 sm:p-4">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-amber-300 mb-3">Alternator and generator readings</h3>
+            <div id="sinabo-readings" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div class="rounded-xl border border-zinc-800 bg-zinc-950/50 p-3 sm:p-4">
+              <h3 class="text-xs font-bold uppercase tracking-wider text-amber-300 mb-2">Run engine</h3>
+              <div id="sinabo-run-tests" class="space-y-2"></div>
+            </div>
+            <div class="rounded-xl border border-zinc-800 bg-zinc-950/50 p-3 sm:p-4">
+              <h3 class="text-xs font-bold uppercase tracking-wider text-amber-300 mb-2">Control panel</h3>
+              <div id="sinabo-control-tests" class="space-y-2"></div>
+            </div>
+          </div>
+
+          <div class="rounded-xl border border-zinc-800 bg-zinc-950/50 p-3 sm:p-4 space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <h3 class="text-xs font-bold uppercase tracking-wider text-amber-300">Parts / consumables supplied</h3>
+              <button type="button" onclick="addJobCardPartRow()" class="px-3 py-1.5 rounded-lg bg-zinc-800 text-zinc-200 text-xs font-semibold">Add item</button>
+            </div>
+            <div id="sinabo-parts" class="space-y-2"></div>
+          </div>
+
+          <div class="rounded-xl border border-zinc-800 bg-zinc-950/50 p-3 sm:p-4 space-y-3">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-amber-300">Travel and notes</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <label class="text-[11px] text-zinc-400">Travel time<input id="jc-travel-time" maxlength="60" class="jobcard-input" placeholder="e.g. 1 h 30 min" /></label>
+              <label class="text-[11px] text-zinc-400">Time on site<input id="jc-time-on-site" maxlength="60" class="jobcard-input" placeholder="e.g. 2 h" /></label>
+              <label class="text-[11px] text-zinc-400">Kilometres<input id="jc-kilometres" inputmode="decimal" maxlength="40" class="jobcard-input" /></label>
+            </div>
+            <label class="block text-[11px] text-zinc-400">Remarks<textarea id="jc-remarks" rows="3" maxlength="2000" class="jobcard-input resize-y"></textarea></label>
+          </div>
+
+          <div class="rounded-xl border border-zinc-800 bg-zinc-950/50 p-3 sm:p-4">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-amber-300 mb-3">Names and signatures</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+              <label class="text-[11px] text-zinc-400">Customer representative name (print) *<input id="jc-customer-rep" required maxlength="160" class="jobcard-input" /></label>
+              <label class="text-[11px] text-zinc-400">Serviceman name (print)<input id="jc-serviceman" readonly class="jobcard-input text-zinc-300" /></label>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div class="min-w-0"><div class="flex items-center justify-between gap-2 mb-1"><span class="text-xs font-semibold text-zinc-200">Customer signature *</span><button type="button" onclick="clearJobCardSignature('customer')" class="text-[10px] text-zinc-400">Clear</button></div><canvas id="jc-signature-customer" class="jobcard-signature" aria-label="Customer signature pad"></canvas></div>
+              <div class="min-w-0"><div class="flex items-center justify-between gap-2 mb-1"><span class="text-xs font-semibold text-zinc-200">Serviceman signature *</span><button type="button" onclick="clearJobCardSignature('serviceman')" class="text-[10px] text-zinc-400">Clear</button></div><canvas id="jc-signature-serviceman" class="jobcard-signature" aria-label="Serviceman signature pad"></canvas></div>
+            </div>
+            <p class="text-[10px] text-zinc-500 mt-2">Both signatures are included in the PDF sent to the SINABO folder.</p>
+          </div>
+
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-zinc-800 pt-4">
+            <p id="jobcard-submit-status" aria-live="polite" class="text-xs text-zinc-400">Submit requires a signed-in user. Offline submissions stay on this device until they can upload.</p>
+            <button id="jobcard-submit-button" type="submit" class="w-full sm:w-auto px-5 py-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-zinc-950 text-sm font-extrabold shadow transition"><i class="fa-solid fa-cloud-arrow-up mr-2"></i>Submit signed job card</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="bg-[#18181B] border border-zinc-800 rounded-2xl p-4 sm:p-5 shadow-xl space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div><h3 class="text-sm font-bold text-white"><i class="fa-solid fa-list-check text-amber-400 mr-1.5"></i>Job Card Upload Log</h3><p class="text-[11px] text-zinc-500 mt-1">Check the entered job card number and whether it is a draft, queued, or saved on the server.</p></div>
+          <div class="flex gap-2"><button type="button" onclick="saveJobCardDraft()" class="px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-200 text-xs font-semibold"><i class="fa-regular fa-floppy-disk mr-1"></i>Save Draft</button><button type="button" onclick="loadJobCardHistory()" class="px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-200 text-xs font-semibold"><i class="fa-solid fa-rotate mr-1"></i>Refresh log</button></div>
+        </div>
+        <div class="text-[10px] text-zinc-500 flex flex-wrap gap-x-4 gap-y-1"><span><b class="text-amber-300">Draft:</b> not uploaded; check signatures.</span><span><b class="text-sky-300">Queued:</b> signed PDF waits for connection.</span><span><b class="text-emerald-300">Uploaded:</b> saved to the TrueNAS company folder.</span></div>
+        <div id="jobcard-log-list" class="space-y-2"><div class="rounded-xl border border-zinc-800 p-4 text-center text-xs text-zinc-500">Loading job card log…</div></div>
+      </div>
+    </section>
+
+    <!-- SECTION 5: SERVER DATABASE SYNC & DIAGNOSTICS -->
     <section id="view-golive" class="hidden space-y-6">
       <div class="bg-[#18181B] border-2 border-emerald-500/50 rounded-2xl p-5 md:p-6 shadow-xl space-y-5">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-zinc-800 pb-4">
@@ -791,7 +912,7 @@
   </main>
 
   <!-- MOBILE BOTTOM NAVIGATION -->
-  <div class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#18181B]/95 backdrop-blur-md border-t border-zinc-800 px-3 py-2 flex items-center justify-around">
+  <div class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#18181B]/95 backdrop-blur-md border-t border-zinc-800 px-2 py-2 flex items-center justify-between gap-1">
     <button onclick="switchTab('scan')" id="mob-nav-scan" class="flex flex-col items-center gap-1 text-[#C41E3A] font-bold text-[11px]">
       <i class="fa-solid fa-qrcode text-lg"></i>
       <span>Scan QR</span>
@@ -808,6 +929,10 @@
     <button onclick="switchTab('fleet')" id="mob-nav-fleet" class="flex flex-col items-center gap-1 text-zinc-400 hover:text-white font-medium text-[11px]">
       <i class="fa-solid fa-truck-pickup text-lg"></i>
       <span>Fleet</span>
+    </button>
+    <button onclick="switchTab('jobcards')" id="mob-nav-jobcards" class="flex flex-col items-center gap-1 text-zinc-400 hover:text-white font-medium text-[10px] min-w-0">
+      <i class="fa-solid fa-file-signature text-lg"></i>
+      <span>Job Card</span>
     </button>
     <button onclick="switchTab('master')" id="mob-nav-master" class="flex flex-col items-center gap-1 text-zinc-400 hover:text-white font-medium text-[11px]">
       <i class="fa-solid fa-user-shield text-lg"></i>
@@ -1808,13 +1933,15 @@
 
       currentUser = account;
       impersonatedRole = null;
+      const servicemanInput = document.getElementById('jc-serviceman');
+      if (servicemanInput) servicemanInput.value = account.name;
       try { localStorage.setItem(LAST_LOGIN_STAFF_KEY, account.name); } catch (e) {}
       sessionStorage.setItem('ug_active_user_v4', JSON.stringify(currentUser));
       if (pinInputEl) pinInputEl.value = '';
       document.getElementById('auth-gate-overlay').classList.add('hidden');
       applyRoleBasedUI();
       showToast(`Signed in as ${currentUser.name} (${currentUser.role})`);
-      if (sessionToken) pullAllFromServer(false);
+      if (sessionToken) { pullAllFromServer(false); flushJobCardQueue(); }
     }
     window.handleStaffLogin = handleStaffLogin;
 
@@ -1870,6 +1997,7 @@
       // Toggle navigation tabs based on permissions
       const showDash = Boolean(perms.canViewDashboard);
       const showMaster = Boolean(perms.canManagePermissions);
+      const showGoLive = roleName === 'Master Admin';
       const showEdit = Boolean(perms.canEditRegister);
 
       document.getElementById('tab-btn-checkouts').classList.toggle('hidden', !showDash);
@@ -1882,8 +2010,8 @@
       document.getElementById('mob-nav-master').classList.toggle('hidden', !showMaster);
       document.getElementById('header-master-btn').classList.toggle('hidden', !showMaster);
 
-      document.getElementById('tab-btn-golive').classList.toggle('hidden', !showMaster);
-      document.getElementById('mob-nav-golive').classList.toggle('hidden', !showMaster);
+      document.getElementById('tab-btn-golive').classList.toggle('hidden', !showGoLive);
+      document.getElementById('mob-nav-golive').classList.toggle('hidden', !showGoLive);
 
       document.getElementById('header-new-asset-btn').classList.toggle('hidden', !showEdit);
       document.getElementById('btn-add-asset-main').classList.toggle('hidden', !showEdit);
@@ -2512,6 +2640,392 @@
       }
     }
 
+    // SINABO SERVICE SCHEDULES, DEVICE QUEUE AND UPLOAD HISTORY
+    const SINABO_CHECK_ITEMS = [
+      'Oil level', 'Oil leaks', 'Radiator core', 'Coolant level', 'Coolant & heater hoses',
+      'Jacket water heater on', 'Fan belts tension / condition', 'Fuel leaks', 'Filter / water trap',
+      'Battery condition', 'Battery electrolyte level', 'Air cleaner element'
+    ];
+    const SINABO_READING_ITEMS = [
+      ['Battery voltage', 'Volts'], ['Battery volt drop', 'Volts'],
+      ['M D ammeter - Red phase', 'Amps'], ['M D ammeter - White phase', 'Amps'], ['M D ammeter - Blue phase', 'Amps'],
+      ['Voltage - Red phase', 'Volts'], ['Voltage - White phase', 'Volts'], ['Voltage - Blue phase', 'Volts'],
+      ['Frequency', 'Hz'], ['Red phase (on load)', 'Amps'], ['White phase (on load)', 'Amps'], ['Blue phase (on load)', 'Amps'],
+      ['Oil pressure', 'Bar'], ['Engine temperature', '°C'], ['Charging current', 'Amps'],
+      ['Day tank fuel level', '%'], ['Bulk tank fuel level', '%']
+    ];
+    const SINABO_RUN_TESTS = [
+      'Simulate low oil pressure', 'Simulate high engine temperature', 'Simulate low water level',
+      'Simulate low fuel', 'Check speed cut out relay', 'Check start attempts', 'Check coupling noises'
+    ];
+    const SINABO_CONTROL_TESTS = [
+      { label: 'Mains failure test', options: ['Yes', 'No'] },
+      { label: 'Check change over timing', unit: 'Sec' },
+      { label: 'Check on load run period', unit: 'Min' },
+      { label: 'Check delay unit shut down', unit: 'Min' },
+      { label: 'Check plant selector switch AUTO', options: ['Yes', 'No'] }
+    ];
+    let activeJobCardDraftId = null;
+    let jobCardQueueBusy = false;
+
+    function escapeJobCardHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+    }
+
+    function jobCardInputClass() { return 'jobcard-input'; }
+
+    function renderSinaboJobCardFields() {
+      const checks = document.getElementById('sinabo-checks');
+      if (checks) checks.innerHTML = SINABO_CHECK_ITEMS.map((label, i) => `
+        <div class="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_130px] gap-2 rounded-lg border border-zinc-800 p-2.5">
+          <span class="text-xs text-zinc-200 self-center">${escapeJobCardHtml(label)}</span>
+          <select id="jc-check-${i}" class="jobcard-input !mt-0 !py-2 text-xs" aria-label="${escapeJobCardHtml(label)} result"><option value="">Select result…</option><option>Normal</option><option>Abnormal</option></select>
+          <input id="jc-check-note-${i}" class="jobcard-input !mt-0 sm:col-span-2 !py-2 text-xs" maxlength="240" placeholder="Notes (optional)" aria-label="${escapeJobCardHtml(label)} notes" />
+        </div>`).join('');
+
+      const readings = document.getElementById('sinabo-readings');
+      if (readings) readings.innerHTML = SINABO_READING_ITEMS.map(([label, unit], i) => `
+        <label class="text-[11px] text-zinc-400">${escapeJobCardHtml(label)} (${escapeJobCardHtml(unit)})<input id="jc-reading-${i}" inputmode="decimal" maxlength="60" class="jobcard-input" /></label>`).join('');
+
+      const renderTest = (targetId, items, prefix) => {
+        const target = document.getElementById(targetId);
+        if (target) target.innerHTML = items.map((item, i) => {
+          const config = typeof item === 'string' ? { label: item, unit: '', options: prefix === 'jc-run' ? ['Yes', 'No', 'N/A'] : [] } : item;
+          const resultControl = config.options?.length
+            ? `<select id="${prefix}-result-${i}" class="jobcard-input !mt-0 !py-2 text-xs" aria-label="${escapeJobCardHtml(config.label)} result"><option value="">Not recorded</option>${config.options.map(option => `<option>${escapeJobCardHtml(option)}</option>`).join('')}</select>`
+            : `<input id="${prefix}-result-${i}" inputmode="decimal" maxlength="60" class="jobcard-input !mt-0 !py-2 text-xs" placeholder="${escapeJobCardHtml(config.unit || 'Value')}" aria-label="${escapeJobCardHtml(config.label)} value" />`;
+          return `
+          <div class="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_105px] gap-2 border-b border-zinc-800/80 pb-2">
+            <span class="text-xs text-zinc-300 self-center">${escapeJobCardHtml(config.label)}</span>
+            ${resultControl}
+            <input id="${prefix}-note-${i}" class="jobcard-input !mt-0 sm:col-span-2 !py-2 text-xs" maxlength="240" placeholder="Reading / notes" aria-label="${escapeJobCardHtml(config.label)} notes" />
+          </div>`;
+        }).join('');
+      };
+      renderTest('sinabo-run-tests', SINABO_RUN_TESTS, 'jc-run');
+      renderTest('sinabo-control-tests', SINABO_CONTROL_TESTS, 'jc-control');
+      const parts = document.getElementById('sinabo-parts');
+      if (parts && !parts.children.length) addJobCardPartRow();
+    }
+
+    function addJobCardPartRow(item = '', quantity = '', notes = '') {
+      const container = document.getElementById('sinabo-parts');
+      if (!container) return;
+      const row = document.createElement('div');
+      row.className = 'grid grid-cols-[minmax(0,1fr)_75px_auto] sm:grid-cols-[minmax(0,1fr)_100px_minmax(0,1fr)_auto] gap-2 items-center';
+      row.innerHTML = `
+        <input maxlength="160" class="jobcard-input !mt-0 text-xs" placeholder="Part / consumable" aria-label="Part or consumable" value="${escapeJobCardHtml(item)}" />
+        <input maxlength="30" inputmode="decimal" class="jobcard-input !mt-0 text-xs" placeholder="Qty" aria-label="Quantity" value="${escapeJobCardHtml(quantity)}" />
+        <input maxlength="160" class="jobcard-input !mt-0 text-xs col-span-2 sm:col-span-1" placeholder="Notes" aria-label="Part notes" value="${escapeJobCardHtml(notes)}" />
+        <button type="button" class="px-2.5 py-2 rounded-lg bg-zinc-900 border border-zinc-700 text-zinc-400" aria-label="Remove part" onclick="this.parentElement.remove()"><i class="fa-solid fa-xmark"></i></button>`;
+      container.appendChild(row);
+    }
+
+    function openJobCardDb() {
+      return new Promise((resolve, reject) => {
+        if (!('indexedDB' in window)) return reject(new Error('This browser does not support offline job card storage.'));
+        const request = indexedDB.open('ug_jobcard_queue_v1', 1);
+        request.onupgradeneeded = () => {
+          const db = request.result;
+          if (!db.objectStoreNames.contains('cards')) db.createObjectStore('cards', { keyPath: 'clientId' });
+        };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error || new Error('Could not open the local job card log.'));
+      });
+    }
+
+    async function storeLocalJobCard(record) {
+      const db = await openJobCardDb();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction('cards', 'readwrite');
+        tx.objectStore('cards').put({ ...record, updatedAt: new Date().toISOString() });
+        tx.oncomplete = () => { db.close(); resolve(); };
+        tx.onerror = () => { db.close(); reject(tx.error || new Error('Could not save this job card on the device.')); };
+        tx.onabort = () => { db.close(); reject(tx.error || new Error('Could not save this job card on the device.')); };
+      });
+    }
+
+    async function readLocalJobCards() {
+      const db = await openJobCardDb();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction('cards', 'readonly');
+        const request = tx.objectStore('cards').getAll();
+        request.onsuccess = () => resolve(request.result || []);
+        request.onerror = () => reject(request.error || new Error('Could not read the local job card log.'));
+        tx.oncomplete = () => db.close();
+        tx.onerror = () => { db.close(); reject(tx.error); };
+      });
+    }
+
+    function newJobCardId() {
+      return window.crypto && crypto.randomUUID ? crypto.randomUUID() : `jc-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    }
+
+    function signatureCanvas(which) { return document.getElementById(`jc-signature-${which}`); }
+
+    function initializeJobCardSignature(which) {
+      const canvas = signatureCanvas(which);
+      if (!canvas || canvas.dataset.initialized === 'true') return;
+      const rect = canvas.getBoundingClientRect();
+      if (!rect.width) return;
+      const ratio = Math.max(window.devicePixelRatio || 1, 1);
+      canvas.width = Math.round(rect.width * ratio);
+      canvas.height = Math.round(rect.height * ratio);
+      const ctx = canvas.getContext('2d');
+      ctx.scale(ratio, ratio);
+      ctx.lineWidth = 2.2;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = '#111827';
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, rect.width, rect.height);
+      canvas.dataset.initialized = 'true';
+      canvas.dataset.signed = 'false';
+      let drawing = false;
+      const point = event => { const box = canvas.getBoundingClientRect(); return { x: event.clientX - box.left, y: event.clientY - box.top }; };
+      canvas.addEventListener('pointerdown', event => { event.preventDefault(); drawing = true; canvas.setPointerCapture(event.pointerId); const p = point(event); ctx.beginPath(); ctx.moveTo(p.x, p.y); });
+      canvas.addEventListener('pointermove', event => { if (!drawing) return; event.preventDefault(); const p = point(event); ctx.lineTo(p.x, p.y); ctx.stroke(); canvas.dataset.signed = 'true'; });
+      const stop = () => { drawing = false; };
+      canvas.addEventListener('pointerup', stop);
+      canvas.addEventListener('pointercancel', stop);
+    }
+
+    function clearJobCardSignature(which) {
+      const canvas = signatureCanvas(which);
+      if (!canvas) return;
+      initializeJobCardSignature(which);
+      const rect = canvas.getBoundingClientRect();
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, rect.width, rect.height);
+      canvas.dataset.signed = 'false';
+    }
+
+    function jobCardSignatureData(which) {
+      const canvas = signatureCanvas(which);
+      return canvas && canvas.dataset.signed === 'true' ? canvas.toDataURL('image/png') : '';
+    }
+
+    function restoreJobCardSignature(which, dataUrl) {
+      const canvas = signatureCanvas(which);
+      if (!canvas || !dataUrl) return;
+      initializeJobCardSignature(which);
+      const image = new Image();
+      image.onload = () => { const rect = canvas.getBoundingClientRect(); const ctx = canvas.getContext('2d'); ctx.drawImage(image, 0, 0, rect.width, rect.height); canvas.dataset.signed = 'true'; };
+      image.src = dataUrl;
+    }
+
+    function collectJobCardData(includeSignatures = true) {
+      const value = id => (document.getElementById(id)?.value || '').trim();
+      const checks = SINABO_CHECK_ITEMS.map((label, i) => ({ label, result: value(`jc-check-${i}`), notes: value(`jc-check-note-${i}`) }));
+      const readings = SINABO_READING_ITEMS.map(([label, unit], i) => ({ label, unit, value: value(`jc-reading-${i}`), notes: '' }));
+      const collectTests = (items, prefix) => items.map((item, i) => { const config = typeof item === 'string' ? { label: item, unit: '' } : item; return { label: config.label, unit: config.unit || '', result: value(`${prefix}-result-${i}`), notes: value(`${prefix}-note-${i}`) }; });
+      const parts = [...(document.getElementById('sinabo-parts')?.children || [])].map(row => [...row.querySelectorAll('input')].map(input => input.value.trim())).filter(row => row.some(Boolean)).map(([item, quantity, notes]) => ({ item, quantity, notes }));
+      return {
+        clientId: activeJobCardDraftId || newJobCardId(), company: 'SINABO', serviceScheduleNo: value('jc-schedule'), date: value('jc-date'),
+        unitRef: value('jc-unit-ref'), customer: value('jc-customer'), orderNo: value('jc-order-no'), site: value('jc-site'),
+        hourMetre: value('jc-hour-metre'), engineType: value('jc-engine-type'), alternatorType: value('jc-alternator-type'),
+        checks, readings, runTests: collectTests(SINABO_RUN_TESTS, 'jc-run'), controlTests: collectTests(SINABO_CONTROL_TESTS, 'jc-control'),
+        parts, travelTime: value('jc-travel-time'), timeOnSite: value('jc-time-on-site'), kilometres: value('jc-kilometres'), remarks: value('jc-remarks'),
+        customerRepName: value('jc-customer-rep'), servicemanName: currentUser?.name || value('jc-serviceman'),
+        customerSignature: includeSignatures ? jobCardSignatureData('customer') : '',
+        servicemanSignature: includeSignatures ? jobCardSignatureData('serviceman') : ''
+      };
+    }
+
+    function setJobCardStatus(message, tone = 'text-zinc-400') {
+      const el = document.getElementById('jobcard-submit-status');
+      if (el) { el.className = `text-xs ${tone}`; el.textContent = message; }
+    }
+
+    function resetJobCardForm() {
+      document.getElementById('sinabo-jobcard-form')?.reset();
+      const date = document.getElementById('jc-date');
+      if (date) date.value = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+      clearJobCardSignature('customer'); clearJobCardSignature('serviceman');
+      const serviceman = document.getElementById('jc-serviceman');
+      if (serviceman) serviceman.value = currentUser?.name || '';
+      activeJobCardDraftId = null;
+    }
+
+    function jobCardStatusFor(data, status) {
+      if (status === 'uploaded') return { label: 'Uploaded to TrueNAS', style: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' };
+      if (status === 'queued') return { label: data?.servicemanName && currentUser?.name !== data.servicemanName ? `Queued · sign in as ${data.servicemanName} to upload` : 'Queued · signed PDF waiting for upload', style: 'bg-sky-500/15 text-sky-300 border-sky-500/30' };
+      const complete = Boolean(data?.customerSignature && data?.servicemanSignature);
+      return complete
+        ? { label: 'Draft · both signatures saved, not submitted', style: 'bg-amber-500/15 text-amber-300 border-amber-500/30' }
+        : { label: 'Draft · signatures still needed', style: 'bg-rose-500/15 text-rose-300 border-rose-500/30' };
+    }
+
+    async function renderJobCardLog(remoteRecords = []) {
+      const target = document.getElementById('jobcard-log-list');
+      const badge = document.getElementById('jobcard-queue-badge');
+      if (!target) return;
+      let local = [];
+      try { local = await readLocalJobCards(); } catch (error) { target.innerHTML = `<div class="text-xs text-rose-300">${escapeJobCardHtml(error.message)}</div>`; return; }
+      local = local.filter(item => (item.data?.servicemanName || item.servicemanName) === currentUser?.name);
+      const merged = new Map(local.map(item => [item.clientId, item]));
+      remoteRecords.forEach(item => {
+        const clientId = item.clientId || item.id;
+        merged.set(clientId, { ...merged.get(clientId), ...item, clientId, status: 'uploaded', updatedAt: item.submittedAt || item.updatedAt });
+      });
+      const records = [...merged.values()].sort((a, b) => new Date(b.updatedAt || b.submittedAt || 0) - new Date(a.updatedAt || a.submittedAt || 0));
+      const queued = records.filter(item => item.status === 'queued').length;
+      if (badge) { badge.textContent = queued ? `${queued} pending upload${queued === 1 ? '' : 's'}` : 'No pending uploads'; badge.className = queued ? 'px-2.5 py-1 rounded-full text-[11px] font-bold bg-sky-500/15 text-sky-300 border border-sky-500/30' : 'px-2.5 py-1 rounded-full text-[11px] font-bold bg-zinc-800 text-zinc-300'; }
+      if (!records.length) { target.innerHTML = '<div class="rounded-xl border border-zinc-800 p-4 text-center text-xs text-zinc-500">No job cards saved on this device or uploaded by this user yet.</div>'; return; }
+      target.innerHTML = records.map(item => {
+        const data = item.data || item;
+        const info = jobCardStatusFor(data, item.status || 'draft');
+        const schedule = escapeJobCardHtml(item.serviceScheduleNo || data.serviceScheduleNo || 'Number not entered');
+        const company = escapeJobCardHtml(item.company || data.company || 'SINABO');
+        const customer = escapeJobCardHtml(item.customer || data.customer || 'Customer not entered');
+        const when = escapeJobCardHtml(new Date(item.updatedAt || item.submittedAt || Date.now()).toLocaleString());
+        const action = item.status === 'draft' ? `<button type="button" onclick="resumeJobCardDraft('${escapeJobCardHtml(item.clientId)}')" class="shrink-0 px-3 py-1.5 rounded-lg bg-zinc-800 text-zinc-200 text-[11px] font-semibold">Resume draft</button>`
+          : item.status === 'queued' ? `<button type="button" onclick="flushJobCardQueue()" class="shrink-0 px-3 py-1.5 rounded-lg bg-sky-500/15 text-sky-200 text-[11px] font-semibold">Try upload</button>`
+          : `<span class="text-[10px] text-zinc-500 break-all">${escapeJobCardHtml(item.fileName || '')}</span>`;
+        return `<article class="min-w-0 rounded-xl border border-zinc-800 bg-zinc-950/50 p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="min-w-0 space-y-1"><div class="flex flex-wrap items-center gap-2"><span class="font-mono font-bold text-sm text-white break-all">${schedule}</span><span class="text-[10px] text-zinc-500">${company}</span><span class="px-2 py-1 rounded-full border text-[10px] font-bold ${info.style}">${info.label}</span></div><div class="text-xs text-zinc-300 break-words">${customer}</div><div class="text-[10px] text-zinc-500">${when}</div></div>
+          <div class="flex flex-wrap items-center gap-2">${action}</div></article>`;
+      }).join('');
+    }
+
+    async function loadJobCardHistory() {
+      let remoteRecords = [];
+      if (sessionToken && SERVER_API_ENABLED) {
+        try {
+          const response = await fetch(`${window.location.origin}/jobcards/api/history`, { headers: { Authorization: `Bearer ${sessionToken}` } });
+          if (response.ok) { const payload = await response.json(); remoteRecords = Array.isArray(payload.records) ? payload.records : []; }
+          else if (response.status === 401) handleSessionExpired();
+        } catch (error) {}
+      }
+      await renderJobCardLog(remoteRecords);
+    }
+
+    async function saveJobCardDraft(showSavedMessage = true) {
+      const data = collectJobCardData(true);
+      if (!data.serviceScheduleNo) { showToast('Enter the job card number before saving a draft.', 'error'); document.getElementById('jc-schedule')?.focus(); return false; }
+      activeJobCardDraftId = data.clientId;
+      try {
+        await storeLocalJobCard({ clientId: data.clientId, company: data.company, serviceScheduleNo: data.serviceScheduleNo, customer: data.customer, status: 'draft', data });
+        setJobCardStatus('Draft saved on this device. Check the upload log to see which signatures are still needed.', 'text-amber-300');
+        if (showSavedMessage) showToast('Job card draft saved on this device');
+        await loadJobCardHistory();
+        return true;
+      } catch (error) { setJobCardStatus(error.message, 'text-rose-300'); showToast(error.message, 'error'); }
+      return false;
+    }
+
+    async function resumeJobCardDraft(clientId) {
+      const draft = (await readLocalJobCards()).find(item => item.clientId === clientId && item.status === 'draft');
+      if (!draft?.data) return;
+      activeJobCardDraftId = draft.clientId;
+      const data = draft.data;
+      const map = { 'jc-schedule': 'serviceScheduleNo', 'jc-date': 'date', 'jc-unit-ref': 'unitRef', 'jc-customer': 'customer', 'jc-order-no': 'orderNo', 'jc-site': 'site', 'jc-hour-metre': 'hourMetre', 'jc-engine-type': 'engineType', 'jc-alternator-type': 'alternatorType', 'jc-travel-time': 'travelTime', 'jc-time-on-site': 'timeOnSite', 'jc-kilometres': 'kilometres', 'jc-remarks': 'remarks', 'jc-customer-rep': 'customerRepName' };
+      Object.entries(map).forEach(([id, key]) => { const el = document.getElementById(id); if (el) el.value = data[key] || ''; });
+      (data.checks || []).forEach((row, i) => { const sel = document.getElementById(`jc-check-${i}`); const note = document.getElementById(`jc-check-note-${i}`); if (sel) sel.value = row.result || ''; if (note) note.value = row.notes || ''; });
+      (data.readings || []).forEach((row, i) => { const el = document.getElementById(`jc-reading-${i}`); if (el) el.value = row.value || ''; });
+      const restoreTests = (rows, prefix) => rows.forEach((row, i) => { const sel = document.getElementById(`${prefix}-result-${i}`); const note = document.getElementById(`${prefix}-note-${i}`); if (sel) sel.value = row.result || ''; if (note) note.value = row.notes || ''; });
+      restoreTests(data.runTests || [], 'jc-run'); restoreTests(data.controlTests || [], 'jc-control');
+      const parts = document.getElementById('sinabo-parts'); parts.innerHTML = ''; (data.parts?.length ? data.parts : [{}]).forEach(row => addJobCardPartRow(row.item, row.quantity, row.notes));
+      document.getElementById('jc-serviceman').value = currentUser?.name || data.servicemanName || '';
+      initializeJobCardSignature('customer'); initializeJobCardSignature('serviceman');
+      clearJobCardSignature('customer'); clearJobCardSignature('serviceman');
+      restoreJobCardSignature('customer', data.customerSignature); restoreJobCardSignature('serviceman', data.servicemanSignature);
+      document.getElementById('sinabo-jobcard-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      showToast(`Draft ${data.serviceScheduleNo} opened`);
+    }
+
+    async function uploadJobCard(data) {
+      if (!sessionToken || !SERVER_API_ENABLED || !navigator.onLine) return { ok: false, offline: true };
+      if (data.servicemanName && currentUser?.name !== data.servicemanName) return { ok: false, error: `Sign in as ${data.servicemanName} to upload this signed card.`, status: 403 };
+      try {
+        const response = await fetch(`${window.location.origin}/jobcards/api/submit`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sessionToken}` }, body: JSON.stringify(data)
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (response.status === 401) handleSessionExpired();
+        return response.ok ? { ok: true, data: payload } : { ok: false, error: payload.error || `Server returned ${response.status}`, status: response.status };
+      } catch (error) { return { ok: false, offline: true, error: error.message }; }
+    }
+
+    async function markJobCardUploaded(record, result) {
+      const cleanData = { ...record.data };
+      delete cleanData.customerSignature; delete cleanData.servicemanSignature;
+      await storeLocalJobCard({ ...record, id: result.id, fileName: result.fileName, submittedBy: result.submittedBy, status: 'uploaded', data: cleanData, updatedAt: new Date().toISOString() });
+    }
+
+    async function flushJobCardQueue() {
+      if (jobCardQueueBusy || !sessionToken || !navigator.onLine) { await loadJobCardHistory(); return; }
+      jobCardQueueBusy = true;
+      try {
+        const queued = (await readLocalJobCards()).filter(item => item.status === 'queued' && item.data?.servicemanName === currentUser?.name).sort((a, b) => new Date(a.updatedAt) - new Date(b.updatedAt));
+        for (const record of queued) {
+          const result = await uploadJobCard(record.data);
+          if (!result.ok) { if (!result.offline) setJobCardStatus(result.error || 'Upload failed; the signed PDF remains queued.', 'text-rose-300'); break; }
+          await markJobCardUploaded(record, result.data);
+          setJobCardStatus(`${record.serviceScheduleNo} uploaded to ${result.data.company}/${result.data.fileName}`, 'text-emerald-300');
+        }
+      } catch (error) { setJobCardStatus(error.message, 'text-rose-300'); }
+      finally { jobCardQueueBusy = false; await loadJobCardHistory(); }
+    }
+
+    async function submitJobCard(event) {
+      event.preventDefault();
+      const button = document.getElementById('jobcard-submit-button');
+      const data = collectJobCardData(true);
+      activeJobCardDraftId = data.clientId;
+      if (!data.customerSignature || !data.servicemanSignature) {
+        const saved = await saveJobCardDraft(false);
+        if (!saved) return;
+        setJobCardStatus('Not submitted. The log marks this as a draft; capture both signatures before submitting.', 'text-rose-300');
+        showToast('Both signatures are required before the signed PDF can be submitted.', 'error');
+        return;
+      }
+      if (data.checks.some(row => !row.result)) {
+        showToast('Select Normal or Abnormal for every generator check before submitting.', 'error');
+        document.getElementById(`jc-check-${data.checks.findIndex(row => !row.result)}`)?.focus();
+        return;
+      }
+      activeJobCardDraftId = data.clientId;
+      button.disabled = true; button.classList.add('opacity-60');
+      try {
+        const record = { clientId: data.clientId, company: data.company, serviceScheduleNo: data.serviceScheduleNo, customer: data.customer, status: 'queued', data };
+        await storeLocalJobCard(record);
+        await loadJobCardHistory();
+        if (!navigator.onLine || !sessionToken || !SERVER_API_ENABLED) {
+          setJobCardStatus(`Signed job card ${data.serviceScheduleNo} is queued on this device and will upload when online and signed in.`, 'text-sky-300');
+          showToast('Signed job card queued on this device');
+          resetJobCardForm();
+          return;
+        }
+        setJobCardStatus(`Uploading signed job card ${data.serviceScheduleNo}…`, 'text-amber-300');
+        const result = await uploadJobCard(data);
+        if (!result.ok) {
+          if (result.offline) {
+            setJobCardStatus(`Connection lost. Signed job card ${data.serviceScheduleNo} is queued on this device.`, 'text-sky-300');
+            showToast('Connection lost; job card queued for upload');
+            resetJobCardForm();
+            return;
+          }
+          setJobCardStatus(`${result.error} The signed card remains in the queue for retry.`, 'text-rose-300');
+          showToast('Job card was not uploaded; it remains queued.', 'error');
+          await loadJobCardHistory();
+          return;
+        }
+        await markJobCardUploaded(record, result.data);
+        setJobCardStatus(`Saved to ${result.data.company}/${result.data.fileName}`, 'text-emerald-300');
+        showToast(`Job card ${data.serviceScheduleNo} uploaded as a PDF`);
+        resetJobCardForm();
+        await loadJobCardHistory();
+      } catch (error) {
+        setJobCardStatus(`${error.message} Keep this form open and try again.`, 'text-rose-300');
+        showToast('Could not upload the job card; check the upload log.', 'error');
+      } finally { button.disabled = false; button.classList.remove('opacity-60'); }
+    }
+
+    window.addEventListener('online', () => { if (sessionToken) flushJobCardQueue(); });
+
     // NAVIGATION TAB SWITCHING
     function switchTab(tab) {
       const perms = getEffectivePermissions();
@@ -2523,8 +3037,12 @@
         showToast("Manager or Storeman permission required", "error");
         return;
       }
+      if (tab === 'golive' && getEffectiveRoleName() !== 'Master Admin') {
+        showToast("Master Admin role required", "error");
+        return;
+      }
 
-      ['scan', 'checkouts', 'inventory', 'fleet', 'master', 'golive'].forEach(t => {
+      ['scan', 'checkouts', 'inventory', 'fleet', 'jobcards', 'master', 'golive'].forEach(t => {
         const view = document.getElementById(`view-${t}`);
         const btn = document.getElementById(`tab-btn-${t}`);
         const mob = document.getElementById(`mob-nav-${t}`);
@@ -2544,6 +3062,12 @@
       if (tab === 'checkouts') renderCheckoutsList();
       if (tab === 'inventory') renderInventoryTable();
       if (tab === 'fleet') renderFleetAndMileageView();
+      if (tab === 'jobcards') {
+        const servicemanInput = document.getElementById('jc-serviceman');
+        if (servicemanInput) servicemanInput.value = currentUser?.name || '';
+        requestAnimationFrame(() => { initializeJobCardSignature('customer'); initializeJobCardSignature('serviceman'); });
+        if (sessionToken) flushJobCardQueue(); else loadJobCardHistory();
+      }
       if (tab === 'master') renderMasterControlTable();
     }
 
@@ -3135,7 +3659,8 @@
     function renderFleetAndMileageView() {
       const fleetGrid = document.getElementById('fleet-vehicles-grid');
       const logTbody = document.getElementById('mileage-logbook-tbody');
-      if (!fleetGrid || !logTbody) return;
+      const logCards = document.getElementById('mileage-logbook-mobile-cards');
+      if (!fleetGrid || !logTbody || !logCards) return;
 
       const perms = getEffectivePermissions();
       const canEdit = Boolean(perms.canEditRegister);
@@ -3252,6 +3777,7 @@
 
       if (filteredLogs.length === 0) {
         logTbody.innerHTML = `<tr><td colspan="9" class="py-6 text-center text-zinc-500 font-sans">No completed vehicle mileage trips match the current filter.</td></tr>`;
+        logCards.innerHTML = '<div class="rounded-xl border border-zinc-800 p-4 text-center text-xs text-zinc-500">No completed vehicle mileage trips match the current filter.</div>';
         return;
       }
 
@@ -3294,6 +3820,35 @@
             </td>
           </tr>
         `;
+      }).join('');
+
+      logCards.innerHTML = filteredLogs.map(l => {
+        const outDate = l.checkoutTime ? new Date(l.checkoutTime).toLocaleString([], { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—';
+        const inDate = l.returnTime ? new Date(l.returnTime).toLocaleString([], { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—';
+        const safeLogId = String(l.id || '').replace(/'/g, "\\'");
+        const tripClass = l.tripType === 'Private / Commute' ? 'bg-rose-500/15 text-rose-300' : 'bg-sky-500/15 text-sky-300';
+        return `
+          <article class="min-w-0 rounded-xl border border-zinc-800 bg-zinc-950/60 p-3.5 space-y-3">
+            <div class="flex flex-wrap items-start justify-between gap-2">
+              <div class="min-w-0"><h4 class="font-bold text-white text-sm break-words">${escapeJobCardHtml(l.vehicleName || 'Vehicle')}</h4><div class="font-mono text-[11px] text-sky-400 break-all">${escapeJobCardHtml(l.vehicleId || '')}</div></div>
+              <span class="max-w-full px-2 py-1 rounded text-[10px] font-bold break-words ${tripClass}">${escapeJobCardHtml(l.tripType || 'Business / Site Visit')}</span>
+            </div>
+            <div class="grid grid-cols-2 gap-x-3 gap-y-2 border-t border-zinc-800 pt-2.5 text-xs">
+              <div class="min-w-0"><div class="text-[10px] uppercase text-zinc-500">Driver</div><div class="text-zinc-200 break-words">${escapeJobCardHtml(l.driver || '—')}</div></div>
+              <div class="min-w-0"><div class="text-[10px] uppercase text-zinc-500">Job / Site</div><div class="text-zinc-200 break-words">${escapeJobCardHtml(l.jobRef || '—')}</div></div>
+              <div class="min-w-0"><div class="text-[10px] uppercase text-zinc-500">OUT</div><div class="text-zinc-400 break-words">${escapeJobCardHtml(outDate)}</div></div>
+              <div class="min-w-0"><div class="text-[10px] uppercase text-zinc-500">IN</div><div class="text-zinc-400 break-words">${escapeJobCardHtml(inDate)}</div></div>
+            </div>
+            <div class="grid grid-cols-3 gap-2 border-t border-zinc-800 pt-2.5 text-center">
+              <div class="min-w-0"><div class="text-[10px] uppercase text-zinc-500">Start KM</div><div class="text-xs font-mono text-zinc-300 break-words">${Number(l.startKm || 0).toLocaleString()} km</div></div>
+              <div class="min-w-0"><div class="text-[10px] uppercase text-zinc-500">Closing KM</div><div class="text-xs font-mono font-bold text-white break-words">${Number(l.endKm || 0).toLocaleString()} km</div></div>
+              <div class="min-w-0"><div class="text-[10px] uppercase text-zinc-500">Distance</div><div class="inline-block max-w-full px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 text-xs font-bold break-words">+${Number(l.distanceKm || 0).toLocaleString()} km</div></div>
+            </div>
+            <div class="flex flex-wrap items-center justify-between gap-2 border-t border-zinc-800 pt-2.5 text-xs">
+              <div class="min-w-0"><span class="text-amber-300"><i class="fa-solid fa-gas-pump mr-1"></i>${escapeJobCardHtml(l.fuelLevel || 'Full')}</span><span class="text-zinc-600 mx-1">·</span><span class="text-emerald-400 break-words">${escapeJobCardHtml(l.condition || 'Good')}</span></div>
+              ${canEdit ? `<button onclick="openDeleteMileageModal('${escapeJobCardHtml(safeLogId)}')" title="Delete Mileage Trip Entry" class="shrink-0 px-3 py-2 rounded-lg bg-zinc-900 hover:bg-rose-600 text-zinc-300 border border-zinc-700 text-xs"><i class="fa-solid fa-trash-can"></i><span class="ml-1">Delete</span></button>` : ''}
+            </div>
+          </article>`;
       }).join('');
     }
 
@@ -3748,6 +4303,9 @@
 
     // INITIALIZE APPLICATION ON LOAD
     window.addEventListener('DOMContentLoaded', () => {
+      renderSinaboJobCardFields();
+      const jobCardDate = document.getElementById('jc-date');
+      if (jobCardDate) jobCardDate.value = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
       populateLoginDropdown();
       populateStaffDropdown();
       populateDirectAssetSelect();

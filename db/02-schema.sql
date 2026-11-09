@@ -95,6 +95,19 @@ ALTER TABLE public.activity_logs ADD COLUMN IF NOT EXISTS timestamp TIMESTAMPTZ 
 ALTER TABLE public.activity_logs ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
 ALTER TABLE public.activity_logs ADD COLUMN IF NOT EXISTS performed_by TEXT;
 
+-- Submitted service schedules are saved as signed PDF files on the TrueNAS share.
+CREATE TABLE IF NOT EXISTS public.job_cards (
+  id TEXT PRIMARY KEY,
+  company TEXT NOT NULL CHECK (company IN ('SINABO', 'UES', 'USS')),
+  file_name TEXT NOT NULL,
+  submitted_by TEXT NOT NULL,
+  customer TEXT,
+  service_schedule_no TEXT,
+  submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  details JSONB NOT NULL DEFAULT '{}'::jsonb
+);
+REVOKE ALL ON public.job_cards FROM PUBLIC, anon, authenticated;
+
 CREATE TABLE IF NOT EXISTS public.staff_sessions (
   token TEXT PRIMARY KEY,
   staff_name TEXT NOT NULL REFERENCES public.staff_accounts(name) ON DELETE CASCADE ON UPDATE CASCADE,

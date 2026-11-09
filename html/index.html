@@ -58,13 +58,7 @@
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-    /* Automatically hide any injected Netlify badges */
-    a[href*="netlify.com"], .netlify-badge, #netlify-badge {
-      display: none !important;
-      visibility: hidden !important;
-      opacity: 0 !important;
-      pointer-events: none !important;
-    }
+
 
     /* Print styling for QR sticker labels */
     @media print {
@@ -204,10 +198,10 @@
       
       <!-- Right Status, User Badge & Overdue Alarm Pill -->
       <div class="flex items-center gap-2">
-        <div id="header-cloud-pill" onclick="switchTab('golive')" class="cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30 transition" title="Click to view Cloud Sync status">
-          <span id="header-cloud-dot" class="w-2 h-2 rounded-full bg-amber-400"></span>
-          <span id="header-cloud-text" class="hidden md:inline">Local Mode</span>
-        </div>
+        <button type="button" id="header-server-pill" onclick="handleHeaderSyncClick()" aria-label="Synchronize with the server database" class="cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30 transition" title="Click to sync with the server database">
+          <span id="header-server-dot" class="w-2 h-2 rounded-full bg-amber-400"></span>
+          <span id="header-server-text" class="hidden md:inline">Local Mode</span>
+        </button>
         <div id="overdue-badge-pill" onclick="switchTab('checkouts')" class="hidden cursor-pointer items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-[#C41E3A] text-white shadow-lg shadow-[#C41E3A]/30 animate-pulse">
           <i class="fa-solid fa-bell"></i>
           <span id="overdue-count-text">0 Overdue</span>
@@ -217,9 +211,6 @@
         </button>
         <button id="header-new-asset-btn" onclick="openAddToolModal()" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700 transition">
           <i class="fa-solid fa-plus text-[#C41E3A]"></i> New Asset
-        </button>
-        <button onclick="downloadStandaloneApp(true)" title="Download Standalone HTML App (With Supabase Config Baked In)" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-zinc-800 hover:bg-zinc-700 text-emerald-400 border border-zinc-700 transition">
-          <i class="fa-solid fa-download"></i> <span class="hidden lg:inline">Download App</span>
         </button>
         <button onclick="lockAndSwitchUser()" title="Switch Technician / Lock Portal" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-zinc-900 hover:bg-rose-950/60 text-zinc-200 hover:text-rose-300 border border-zinc-700 transition">
           <i class="fa-solid fa-right-from-bracket text-[#C41E3A]"></i> <span id="mobile-user-short" class="sm:hidden font-semibold">Switch</span><span class="hidden sm:inline">Switch User</span>
@@ -249,7 +240,7 @@
         <i class="fa-solid fa-user-shield text-[#ff4d6d]"></i> Master Control (<span id="header-staff-count">36</span>)
       </button>
       <button onclick="switchTab('golive')" id="tab-btn-golive" class="flex-1 py-2.5 px-4 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition duration-150 text-zinc-400 hover:text-white hover:bg-zinc-800/70">
-        <i class="fa-solid fa-cloud-arrow-up text-emerald-400"></i> Cloud &amp; Go-Live
+        <i class="fa-solid fa-cloud-arrow-up text-emerald-400"></i> Server &amp; Sync
       </button>
     </nav>
 
@@ -647,7 +638,7 @@
                 <span class="text-xs font-extrabold text-[#ff4d6d] uppercase">1. Master Admin</span>
                 <span id="role-count-master" class="text-xs font-mono font-bold text-white bg-[#C41E3A] px-2 py-0.5 rounded">1</span>
               </div>
-              <p class="text-[11px] text-zinc-400 mt-1">Full system control. Can allocate staff permissions, reset PINs, edit asset register, and configure cloud sync.</p>
+              <p class="text-[11px] text-zinc-400 mt-1">Full system control. Can allocate staff permissions, reset PINs, edit asset register, and view database sync status.</p>
             </div>
             <div class="mt-2 pt-2 border-t border-zinc-800/80 text-[10px] text-emerald-400 font-mono">
               <i class="fa-solid fa-check-double mr-1"></i> Your Active Master Role
@@ -731,184 +722,55 @@
       </div>
     </section>
 
-    <!-- SECTION 4: CLOUD DATABASE SYNC & ROLLOUT ROADMAP -->
+    <!-- SECTION 4: SERVER DATABASE SYNC & DIAGNOSTICS -->
     <section id="view-golive" class="hidden space-y-6">
-
       <div class="bg-[#18181B] border-2 border-emerald-500/50 rounded-2xl p-5 md:p-6 shadow-xl space-y-5">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-zinc-800 pb-4">
           <div>
             <div class="flex items-center gap-2">
-              <span class="px-2.5 py-0.5 rounded bg-emerald-500 text-slate-950 text-[10px] font-extrabold uppercase tracking-wider">Live Cloud Sync Engine</span>
-              <span id="db-mode-pill" class="px-3 py-0.5 rounded-full text-xs font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">
-                Mode: Local Browser Storage
-              </span>
+              <span class="px-2.5 py-0.5 rounded bg-emerald-500 text-slate-950 text-[10px] font-extrabold uppercase tracking-wider">Server Database</span>
+              <span id="db-mode-pill" class="px-3 py-0.5 rounded-full text-xs font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">Mode: Local Browser Storage</span>
             </div>
-            <h2 class="text-lg font-bold text-white mt-1 flex items-center gap-2">
-              <i class="fa-solid fa-cloud-bolt text-emerald-400"></i> Supabase Sync Debugger &amp; 1-Click Force Push (`public.tools` &amp; `public.staff_accounts`)
-            </h2>
-            <p class="text-xs text-zinc-400">Connect your Supabase project and push all Ultimate Group assets, logs, and staff PINs directly to the cloud.</p>
+            <h2 class="text-lg font-bold text-white mt-1 flex items-center gap-2"><i class="fa-solid fa-server text-emerald-400"></i> Database Sync &amp; Diagnostics</h2>
+            <p class="text-xs text-zinc-400">The hosted app connects to its server database automatically. Use Sync Now to refresh tools, staff and activity logs.</p>
           </div>
-          <div class="flex flex-wrap items-center gap-2">
-            <button onclick="runSystemHealthCheck()" class="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 font-bold rounded-lg text-xs flex items-center gap-1.5 transition">
-              <i class="fa-solid fa-stethoscope text-emerald-400"></i> System Health Check
-            </button>
-          </div>
+          <button onclick="runSystemHealthCheck()" class="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 font-bold rounded-lg text-xs flex items-center gap-1.5 transition">
+            <i class="fa-solid fa-stethoscope text-emerald-400"></i> System Health Check
+          </button>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
-          <div class="lg:col-span-6 space-y-3">
-            <div>
-              <label class="block text-xs font-bold text-zinc-200 mb-1">
-                1. Supabase Project URL <span class="text-[#C41E3A]">*</span>
-              </label>
-              <input type="url" id="cfg-supabase-url" oninput="validateSupabaseInputsLive()" placeholder="https://xxxxxxxxxxxx.supabase.co" class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-emerald-400" />
-            </div>
-            <div>
-              <div class="flex items-center justify-between mb-1">
-                <label class="block text-xs font-bold text-zinc-200">
-                  2. Supabase Anon / Publishable API Key <span class="text-[#C41E3A]">*</span>
-                </label>
-                <button type="button" onclick="toggleKeyVisibility()" class="text-[10px] text-zinc-400 hover:text-white underline font-mono">Show/Hide Key</button>
-              </div>
-              <input type="password" id="cfg-supabase-key" oninput="validateSupabaseInputsLive()" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI... or sb_publishable_..." class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-emerald-400" />
-              <div id="key-validation-hint" class="text-[11px] text-zinc-400 mt-1 font-mono">
-                Find in Supabase: <strong>Project Settings (Gear Icon) &rarr; API &rarr; Project URL &amp; anon public key</strong>.
-              </div>
-            </div>
-
-            <div class="flex flex-wrap items-center gap-2 pt-1">
-              <button onclick="saveCloudConfigAndSync()" class="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold rounded-lg text-xs transition shadow-lg flex items-center gap-1.5">
-                <i class="fa-solid fa-plug-circle-check"></i> Save Credentials &amp; Push All Data Now
-              </button>
-              <button onclick="clearCloudConfig()" class="px-3 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-semibold rounded-lg text-xs transition">
-                Disconnect (Local Mode)
-              </button>
-            </div>
+        <div class="flex flex-wrap items-center justify-between gap-3 bg-zinc-950 border border-zinc-800 rounded-xl p-4">
+          <div>
+            <div class="text-xs font-bold text-white uppercase tracking-wider">Manual Database Sync</div>
+            <div id="last-sync-timestamp" class="text-[10px] font-mono text-zinc-400 mt-1">Never synced</div>
           </div>
-
-          <div class="lg:col-span-6 bg-zinc-950 border border-zinc-800 rounded-xl p-4 space-y-2.5 flex flex-col justify-between">
-            <div class="text-xs font-bold text-white uppercase tracking-wider flex items-center justify-between">
-              <span><i class="fa-solid fa-bolt text-amber-400 mr-1"></i> Manual Cloud Sync Controls</span>
-              <span id="last-sync-timestamp" class="text-[10px] font-mono text-zinc-400 font-normal">Never synced</span>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <button onclick="testSupabaseConnectionAndInspect()" class="p-2.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-left transition flex items-start gap-2.5">
-                <i class="fa-solid fa-magnifying-glass-chart text-sky-400 text-sm mt-0.5"></i>
-                <div>
-                  <div class="text-xs font-bold text-white">1. Test &amp; Inspect Tables</div>
-                  <div class="text-[10px] text-zinc-400">Check the database connection</div>
-                </div>
-              </button>
-
-              <button onclick="forcePushAllToolsToSupabase()" class="p-2.5 rounded-lg bg-[#C41E3A]/20 hover:bg-[#C41E3A]/30 border border-[#C41E3A]/50 text-left transition flex items-start gap-2.5">
-                <i class="fa-solid fa-cloud-arrow-up text-[#ff4d6d] text-sm mt-0.5"></i>
-                <div>
-                  <div class="text-xs font-bold text-white">2. Force Push Tools &amp; PINs</div>
-                  <div class="text-[10px] text-zinc-300">Upsert tools &amp; staff accounts</div>
-                </div>
-              </button>
-
-              <button onclick="pullAllFromSupabase(true)" class="p-2.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-left transition flex items-start gap-2.5">
-                <i class="fa-solid fa-cloud-arrow-down text-emerald-400 text-sm mt-0.5"></i>
-                <div>
-                  <div class="text-xs font-bold text-white">3. Pull Latest Data</div>
-                  <div class="text-[10px] text-zinc-400">Fetch latest cloud rows to device</div>
-                </div>
-              </button>
-
-              <button onclick="downloadStandaloneApp(true)" class="p-2.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-left transition flex items-start gap-2.5">
-                <i class="fa-solid fa-file-code text-emerald-400 text-sm mt-0.5"></i>
-                <div>
-                  <div class="text-xs font-bold text-emerald-300">4. Download Team HTML</div>
-                  <div class="text-[10px] text-zinc-300">Pre-configured with Supabase &amp; PINs</div>
-                </div>
-              </button>
-            </div>
+          <div class="flex gap-2">
+            <button onclick="testServerConnectionAndInspect()" class="px-3 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-xs font-bold text-zinc-200 transition">
+              <i class="fa-solid fa-plug-circle-check text-sky-400 mr-1"></i> Test Connection
+            </button>
+            <button onclick="pullAllFromServer(true)" class="px-3 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-extrabold transition">
+              <i class="fa-solid fa-rotate mr-1"></i> Sync Now
+            </button>
           </div>
         </div>
 
         <div class="bg-zinc-950 border border-zinc-800 rounded-xl p-3.5 space-y-2">
           <div class="flex items-center justify-between">
-            <span class="text-[11px] font-mono font-bold text-emerald-400 flex items-center gap-1.5">
-              <i class="fa-solid fa-terminal"></i> Database Sync Console
-            </span>
+            <span class="text-[11px] font-mono font-bold text-emerald-400 flex items-center gap-1.5"><i class="fa-solid fa-terminal"></i> Database Sync Console</span>
             <button onclick="clearSyncConsole()" class="text-[10px] font-mono text-zinc-400 hover:text-white">Clear Log</button>
           </div>
-          <div id="supabase-sync-console" class="max-h-48 overflow-y-auto font-mono text-[11px] text-zinc-300 space-y-1 bg-black/60 p-3 rounded-lg border border-zinc-900">
-            <div class="text-zinc-500">[Ready] Enter your Supabase Project URL and Anon/Publishable Key above, then click "Save Credentials &amp; Push All Data Now".</div>
+          <div id="server-sync-console" class="max-h-48 overflow-y-auto font-mono text-[11px] text-zinc-300 space-y-1 bg-black/60 p-3 rounded-lg border border-zinc-900">
+            <div class="text-zinc-500">[Ready] Waiting for a database connection.</div>
           </div>
         </div>
       </div>
 
       <div id="diagnostics-results-box" class="hidden bg-[#18181B] border border-emerald-500/50 rounded-2xl p-5 shadow-xl space-y-3">
         <div class="flex items-center justify-between border-b border-zinc-800 pb-2">
-          <h3 class="font-bold text-sm text-emerald-400 flex items-center gap-2">
-            <i class="fa-solid fa-square-poll-vertical"></i> Ultimate Group System Health &amp; Diagnostics Report
-          </h3>
+          <h3 class="font-bold text-sm text-emerald-400 flex items-center gap-2"><i class="fa-solid fa-square-poll-vertical"></i> System Health &amp; Diagnostics Report</h3>
           <button onclick="document.getElementById('diagnostics-results-box').classList.add('hidden')" class="text-zinc-400 hover:text-white text-xs">Close</button>
         </div>
         <div id="diagnostics-content" class="space-y-2 text-xs font-mono"></div>
-      </div>
-
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <!-- TRUENAS SCALE CUSTOM APP DEPLOYMENT GUIDE -->
-        <div class="lg:col-span-12 bg-[#18181B] border-2 border-sky-500/50 rounded-2xl p-5 md:p-6 shadow-xl space-y-4">
-          <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-zinc-800 pb-3">
-            <div>
-              <div class="flex items-center gap-2">
-                <span class="px-2.5 py-0.5 rounded bg-sky-500 text-slate-950 text-[10px] font-extrabold uppercase tracking-wider">TrueNAS SCALE Self-Hosting</span>
-                <span class="text-xs text-zinc-400 font-mono">Docker / Custom App Ready</span>
-              </div>
-              <h3 class="font-bold text-base text-white mt-1 flex items-center gap-2">
-                <i class="fa-solid fa-server text-sky-400"></i> Deploy on TrueNAS SCALE as a Custom App (`nginx:alpine`)
-              </h3>
-              <p class="text-xs text-zinc-400">Because this entire portal is a single self-contained HTML file, you can host it directly on your TrueNAS SCALE server in under 2 minutes.</p>
-            </div>
-            <div class="flex flex-wrap gap-2">
-              <button onclick="downloadStandaloneIndexHtml()" class="px-3.5 py-2 rounded-lg bg-sky-500 hover:bg-sky-400 text-slate-950 text-xs font-extrabold shadow flex items-center gap-1.5 transition">
-                <i class="fa-solid fa-download"></i> 1. Download as `index.html`
-              </button>
-              <button onclick="copyTrueNasCompose()" class="px-3.5 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700 text-xs font-bold flex items-center gap-1.5 transition">
-                <i class="fa-regular fa-copy text-sky-400"></i> 2. Copy Docker Compose YAML
-              </button>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 text-xs">
-            <div class="lg:col-span-6 space-y-2.5 bg-zinc-950 border border-zinc-800 rounded-xl p-4">
-              <div class="font-bold text-white uppercase tracking-wider text-[11px] flex items-center gap-1.5">
-                <i class="fa-solid fa-list-check text-sky-400"></i> Step-by-Step TrueNAS SCALE Setup
-              </div>
-              <ol class="list-decimal list-inside space-y-2 text-zinc-300 leading-relaxed">
-                <li>Create a dataset or folder on your TrueNAS pool (e.g. <code class="text-sky-400 bg-zinc-900 px-1.5 py-0.5 rounded">/mnt/tank/apps/ug-assets</code>).</li>
-                <li>Click <strong>"1. Download as index.html"</strong> above and place that <code class="text-emerald-400 bg-zinc-900 px-1.5 py-0.5 rounded">index.html</code> file inside <code class="text-sky-400 bg-zinc-900 px-1.5 py-0.5 rounded">/mnt/tank/apps/ug-assets/index.html</code> (via SMB share or TrueNAS Shell).</li>
-                <li>In TrueNAS SCALE, go to <strong>Apps &rarr; Discover Apps &rarr; Custom App</strong> (or click the three dots &rarr; <strong>Install via YAML</strong> on Electric Eel 24.10+).</li>
-                <li>Paste the Docker Compose YAML on the right (or set Image Repository to <code class="text-amber-300">nginx:alpine</code>, Host Path <code class="text-sky-400">/mnt/tank/apps/ug-assets</code> &rarr; Mount Path <code class="text-sky-400">/usr/share/nginx/html</code>, and Node Port <code class="text-emerald-400">30080</code> &rarr; Container Port <code class="text-emerald-400">80</code>).</li>
-                <li>Open <code class="text-emerald-400">http://YOUR-TRUENAS-IP:30080</code> on any PC or phone on your Wi-Fi!</li>
-              </ol>
-              <div class="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-[11px] text-amber-300">
-                <i class="fa-solid fa-mobile-screen-button mr-1"></i> <strong>Mobile Camera Note on Local LAN IPs:</strong> Mobile browsers block live video streaming over plain <code class="underline">http://192.168.x.x</code> unless you use HTTPS (Nginx Proxy Manager / Tailscale / Cloudflare Tunnel). If running on plain HTTP, technicians can tap the <strong>"Snap QR"</strong> button next to Lookup to use their phone's native camera!
-              </div>
-            </div>
-
-            <div class="lg:col-span-6 flex flex-col">
-              <div class="text-[11px] font-mono font-bold text-sky-400 mb-1.5 flex items-center justify-between">
-                <span>docker-compose.yml (TrueNAS SCALE 24.10+ YAML)</span>
-                <span class="text-zinc-500">Port: 30080</span>
-              </div>
-              <pre id="truenas-compose-block" class="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-[11px] font-mono text-sky-300 overflow-x-auto leading-relaxed">services:
-  ug-asset-tracker:
-    image: nginx:alpine
-    container_name: ug-asset-tracker
-    restart: unless-stopped
-    ports:
-      - "30080:80"
-    volumes:
-      - /mnt/tank/apps/ug-assets:/usr/share/nginx/html:ro</pre>
-            </div>
-          </div>
-        </div>
       </div>
     </section>
 
@@ -1238,7 +1100,7 @@
         </button>
       </div>
       <p class="text-xs text-zinc-300 leading-relaxed">
-        Are you sure you want to permanently remove this <span id="delete-asset-type-badge" class="font-bold text-rose-400">Asset</span> (<strong id="delete-tool-label" class="text-white">UG-101</strong>) from the Master Register and Cloud Database?
+        Are you sure you want to permanently remove this <span id="delete-asset-type-badge" class="font-bold text-rose-400">Asset</span> (<strong id="delete-tool-label" class="text-white">UG-101</strong>) from the Master Register and Server Database?
       </p>
       <div class="flex justify-end gap-2 pt-2 border-t border-zinc-800">
         <button type="button" onclick="closeDeleteToolModal()" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-xs font-semibold text-zinc-300">Cancel</button>
@@ -1276,10 +1138,6 @@
 
   <!-- COMPLETE APPLICATION JAVASCRIPT -->
   <script>
-    // Pre-Configured Supabase Credentials (Populated automatically when clicking Download Team HTML)
-    const PRECONFIGURED_SUPABASE_URL = "";
-    const PRECONFIGURED_SUPABASE_KEY = "";
-
     // Official 36 Ultimate Group Staff Members
     const DEFAULT_STAFF_NAMES = [
       "Arthur Sibisi",
@@ -1553,7 +1411,7 @@
       staffAccounts = buildDefaultStaffAccounts();
     }
 
-    // Track deleted asset IDs & timestamps so default seeding and background Supabase polling never bring deleted vehicles/tools back
+    // Track deleted asset IDs & timestamps so default seeding and background Server polling never bring deleted vehicles/tools back
     let deletedAssetTimestamps = {};
     try {
       const savedDeleted = JSON.parse(localStorage.getItem('ug_tooltrack_deleted_assets_v1'));
@@ -1647,57 +1505,20 @@
     let currentModalMode = 'checkout';
     let cameraStream = null;
     let qrScanInterval = null;
-    let cloudPollInterval = null;
+    let serverPollInterval = null;
     let detectedToolsColumns = null;
-    // Track local modifications by tool ID so background cloud polls never revert a newly signed-out or returned tool
+    // Track local modifications by tool ID so background server syncs never revert a newly signed-out or returned tool
     const localToolLockTimestamps = {};
 
-    // SELF-HOSTED MODE: the database API lives on this same server (nginx → PostgREST at /rest/v1/).
-    // Any Supabase URL/key saved on a device by the old Netlify version is ignored.
-    const SELF_HOSTED_API = /^https?:$/.test(window.location.protocol);
+    // The hosted app always uses the database API on its own origin. Opening the
+    // HTML file directly keeps the local-only browser storage mode.
+    const SERVER_API_ENABLED = /^https?:$/.test(window.location.protocol);
 
-    function getCleanSupabaseUrl() {
-      if (SELF_HOSTED_API) return window.location.origin;
-      let url = (localStorage.getItem('ug_supabase_url') || PRECONFIGURED_SUPABASE_URL || '').trim().replace(/\/+$/, '');
-      if (url.endsWith('/rest/v1')) {
-        url = url.slice(0, -8);
-      }
-      return url;
+    function getServerCreds() {
+      return { url: SERVER_API_ENABLED ? window.location.origin : '', key: 'self-hosted', enabled: SERVER_API_ENABLED };
     }
 
-    function getSupabaseCreds() {
-      const url = getCleanSupabaseUrl();
-      if (SELF_HOSTED_API) return { url, key: 'self-hosted', enabled: true };
-      const key = (localStorage.getItem('ug_supabase_key') || PRECONFIGURED_SUPABASE_KEY || '').trim();
-      return { url, key, enabled: Boolean(url && key) };
-    }
-
-    // Replace the Supabase connection controls with a simple status panel when self-hosted
-    function applySelfHostedUI() {
-      if (!SELF_HOSTED_API) return;
-      try { localStorage.removeItem('ug_supabase_url'); localStorage.removeItem('ug_supabase_key'); } catch (e) {}
-      const urlInput = document.getElementById('cfg-supabase-url');
-      const cfgCol = urlInput ? urlInput.closest('.lg\\:col-span-6') : null;
-      if (cfgCol) {
-        cfgCol.innerHTML = `
-          <div class="bg-zinc-950 border border-emerald-500/40 rounded-xl p-4 space-y-2">
-            <div class="text-sm font-bold text-emerald-400"><i class="fa-solid fa-server mr-1.5"></i> In-house database</div>
-            <p class="text-xs text-zinc-300">This app saves to the company's own server. There is nothing to configure here.</p>
-            <p class="text-xs text-zinc-400">Add or remove assets in the <strong>Inventory</strong> tab. Manage staff, roles and PINs in <strong>Master Control</strong>.</p>
-          </div>`;
-      }
-      // Hide the old "download HTML for Netlify/Supabase" exporters
-      document.querySelectorAll('[onclick^="downloadStandaloneApp"], [onclick^="downloadStandaloneIndexHtml"]').forEach(btn => {
-        const card = btn.closest('.lg\\:col-span-12') || btn;
-        card.classList.add('hidden');
-      });
-      const headerTitle = document.querySelector('#view-golive h2');
-      if (headerTitle) headerTitle.innerHTML = '<i class="fa-solid fa-server text-emerald-400"></i> Database Sync &amp; Diagnostics';
-      const headerSub = headerTitle ? headerTitle.nextElementSibling : null;
-      if (headerSub) headerSub.textContent = 'Live sync with the in-house database. Use the buttons to test the connection or re-sync.';
-    }
-
-    function buildSupabaseHeaders(key, preferHeader = null) {
+    function buildServerHeaders(key, preferHeader = null) {
       const headers = {
         'apikey': key,
         'Authorization': `Bearer ${key}`,
@@ -1707,18 +1528,17 @@
       return headers;
     }
 
-    // ===== Secure server API (see supabase-security.sql) =====
-    // PINs are checked inside Supabase; the browser only ever holds a session token.
+    // PINs are checked by the server; the browser only ever holds a session token.
     let sessionToken = null;
 
     async function ugRpc(fnName, args = {}) {
-      const { url, key, enabled } = getSupabaseCreds();
+      const { url, key, enabled } = getServerCreds();
       if (!enabled) return { ok: false, offline: true, error: 'not_configured' };
       let res;
       try {
         res = await fetch(`${url}/rest/v1/rpc/${fnName}`, {
           method: 'POST',
-          headers: buildSupabaseHeaders(key),
+          headers: buildServerHeaders(key),
           body: JSON.stringify(args)
         });
       } catch (netErr) {
@@ -1734,7 +1554,7 @@
         handleSessionExpired();
       }
       if (res.status === 404 || (data && data.code === 'PGRST202')) {
-        logToSyncConsole(`Server function ${fnName} missing. Run supabase-security.sql in the Supabase SQL Editor.`, "error");
+        logToSyncConsole(`Database function ${fnName} is missing. Update or restart the app so the database migrations can run.`, "error");
       }
       return { ok: false, status: res.status, error: message };
     }
@@ -1778,7 +1598,7 @@
     }
 
     function logToSyncConsole(msg, level = "info") {
-      const box = document.getElementById('supabase-sync-console');
+      const box = document.getElementById('server-sync-console');
       if (!box) return;
       const time = new Date().toLocaleTimeString();
       let color = "text-zinc-300";
@@ -1794,7 +1614,7 @@
     }
 
     function clearSyncConsole() {
-      const box = document.getElementById('supabase-sync-console');
+      const box = document.getElementById('server-sync-console');
       if (box) box.innerHTML = '<div class="text-zinc-500">[Console cleared]</div>';
     }
 
@@ -1917,11 +1737,11 @@
         return;
       }
 
-      const { enabled } = getSupabaseCreds();
+      const { enabled } = getServerCreds();
       let account = null;
 
       if (enabled) {
-        // Cloud mode: the PIN is checked by Supabase. It is never downloaded to this device.
+        // Hosted mode: the PIN is checked by Server. It is never downloaded to this device.
         const res = await ugRpc('ug_login', { p_name: selectedName, p_pin: enteredPin });
         if (pinInputEl) pinInputEl.value = '';
         if (!res.ok) {
@@ -1947,7 +1767,7 @@
         const idx = staffAccounts.findIndex(s => s.name === account.name);
         if (idx >= 0) staffAccounts[idx] = account; else staffAccounts.push(account);
       } else {
-        // Local-only mode (no Supabase configured): single-device PIN check
+        // Local-only mode (no Server configured): single-device PIN check
         account = staffAccounts.find(s => s.name === selectedName);
         if (!account) {
           showToast("Staff account not found", "error");
@@ -1975,7 +1795,7 @@
       document.getElementById('auth-gate-overlay').classList.add('hidden');
       applyRoleBasedUI();
       showToast(`Signed in as ${currentUser.name} (${currentUser.role})`);
-      if (sessionToken) pullAllFromSupabase(false);
+      if (sessionToken) pullAllFromServer(false);
     }
     window.handleStaffLogin = handleStaffLogin;
 
@@ -2166,7 +1986,7 @@
       staffAccounts[idx].permissions = { ...ROLE_PRESETS[newRole] };
       persistState();
       renderMasterControlTable();
-      upsertStaffToSupabase(staffAccounts[idx]);
+      upsertStaffToServer(staffAccounts[idx]);
       showToast(`Updated ${staffAccounts[idx].name} to ${newRole}`);
     }
 
@@ -2177,7 +1997,7 @@
       }
       staffAccounts[idx].permissions[permKey] = Boolean(checked);
       persistState();
-      upsertStaffToSupabase(staffAccounts[idx]);
+      upsertStaffToServer(staffAccounts[idx]);
       showToast(`Updated permission for ${staffAccounts[idx].name}`);
     }
 
@@ -2190,9 +2010,9 @@
         return;
       }
       const name = staffAccounts[idx].name;
-      if (getSupabaseCreds().enabled) {
-        // Cloud mode: PIN goes straight to the server to be hashed and is not kept on this device
-        const ok = await upsertStaffToSupabase(staffAccounts[idx], cleaned);
+      if (getServerCreds().enabled) {
+        // Hosted mode: PIN goes straight to the server to be hashed and is not kept on this device
+        const ok = await upsertStaffToServer(staffAccounts[idx], cleaned);
         renderMasterControlTable();
         if (ok) showToast(`Saved new PIN for ${name}`);
         return;
@@ -2208,7 +2028,7 @@
       staffAccounts[idx].active = !staffAccounts[idx].active;
       persistState();
       renderMasterControlTable();
-      upsertStaffToSupabase(staffAccounts[idx]);
+      upsertStaffToServer(staffAccounts[idx]);
       showToast(`${staffAccounts[idx].name} is now ${staffAccounts[idx].active ? 'Active' : 'Suspended'}`);
     }
 
@@ -2228,14 +2048,14 @@
         return;
       }
 
-      const cloud = getSupabaseCreds().enabled;
+      const serverConnected = getServerCreds().enabled;
       const newAccount = {
         name,
         role,
         active: true,
         permissions: { ...ROLE_PRESETS[role] }
       };
-      if (!cloud) newAccount.pin = pin;
+      if (!serverConnected) newAccount.pin = pin;
 
       staffAccounts.push(newAccount);
       staffAccounts.sort((a, b) => a.name.localeCompare(b.name));
@@ -2243,7 +2063,7 @@
       pinInput.value = '';
       persistState();
       renderMasterControlTable();
-      if (cloud) upsertStaffToSupabase(newAccount, pin);
+      if (serverConnected) upsertStaffToServer(newAccount, pin);
       showToast(pin === '1234' ? `Added ${name} (${role}) with default PIN 1234` : `Added ${name} (${role})`);
     }
 
@@ -2254,8 +2074,8 @@
         showToast("Cannot delete primary Master Admin account", "error");
         return;
       }
-      if (getSupabaseCreds().enabled) {
-        const ok = await deleteStaffFromSupabase(target.name);
+      if (getServerCreds().enabled) {
+        const ok = await deleteStaffFromServer(target.name);
         if (!ok) return;
       }
       const curIdx = staffAccounts.findIndex(s => s.name === target.name);
@@ -2266,10 +2086,10 @@
     }
 
     function resetDefaultStaffRoster() {
-      if (getSupabaseCreds().enabled) {
+      if (getServerCreds().enabled) {
         // Re-add any missing default staff on the server. Existing PINs are kept; new accounts get 1234.
         const defaults = buildDefaultStaffAccounts().map(({ pin, ...rest }) => rest);
-        upsertStaffToSupabase(defaults).then(ok => { if (ok) pullAllFromSupabase(false); });
+        upsertStaffToServer(defaults).then(ok => { if (ok) pullAllFromServer(false); });
         showToast("Restoring default Ultimate Group staff roster...");
         return;
       }
@@ -2303,8 +2123,8 @@
       };
     }
 
-    // SUPABASE CLOUD SYNC FUNCTIONS
-    function mapToolToSupabasePayload(tool, mode = "standard") {
+    // SERVER DATABASE SYNC FUNCTIONS
+    function mapToolToServerPayload(tool, mode = "standard") {
       const packedNotes = packToolConditionNotes(tool);
       if (mode === "minimal") {
         return {
@@ -2346,7 +2166,7 @@
       };
     }
 
-    function mapSupabaseRowToTool(row) {
+    function mapServerRowToTool(row) {
       const holderVal = row.current_holder || row.holder || null;
       const rawStatus = String(row.status || '').trim();
       const isCheckedOut = rawStatus.toLowerCase() === 'checked out' || Boolean(holderVal && rawStatus.toLowerCase() !== 'in stores');
@@ -2374,16 +2194,16 @@
       };
     }
 
-    // All cloud reads/writes below go through the secured ug_* server functions and need a signed-in session.
+    // All database reads/writes below go through the secured ug_* server functions and need a signed-in session.
     function markSynced() {
       const stamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
       const el = document.getElementById('last-sync-timestamp');
       if (el) el.innerText = `Last synced: ${stamp}`;
-      updateCloudStatusBadge(true);
+      updateServerStatusBadge(true);
     }
 
-    async function upsertVehicleLogsToSupabase() {
-      if (!getSupabaseCreds().enabled || !sessionToken) return false;
+    async function upsertVehicleLogsToServer() {
+      if (!getServerCreds().enabled || !sessionToken) return false;
       const row = {
         id: "__UG_VEHICLE_LOGS__",
         name: "SYSTEM_VEHICLE_MILEAGE_LOGS",
@@ -2395,16 +2215,16 @@
       };
       const res = await ugRpc('ug_upsert_tools', { p_token: sessionToken, p_rows: [row] });
       if (res.ok) {
-        logToSyncConsole(`SUCCESS: Synced ${vehicleMileageLogs.length} vehicle mileage log(s) to Supabase Cloud`, "success");
+        logToSyncConsole(`SUCCESS: Synced ${vehicleMileageLogs.length} vehicle mileage log(s) to server database`, "success");
         return true;
       }
       logToSyncConsole(`ERROR: Could not save vehicle logs: ${res.error}`, "error");
       return false;
     }
 
-    async function upsertToolsToSupabase(toolArray) {
-      if (!getSupabaseCreds().enabled || !sessionToken) return false;
-      const payload = toolArray.map(t => mapToolToSupabasePayload(t, "sql_script"));
+    async function upsertToolsToServer(toolArray) {
+      if (!getServerCreds().enabled || !sessionToken) return false;
+      const payload = toolArray.map(t => mapToolToServerPayload(t, "sql_script"));
       const res = await ugRpc('ug_upsert_tools', { p_token: sessionToken, p_rows: payload });
       if (res.ok) {
         markSynced();
@@ -2416,8 +2236,8 @@
     }
 
     // Returns { ok, forbidden }
-    async function deleteToolFromSupabase(toolId) {
-      if (!getSupabaseCreds().enabled || !sessionToken) return { ok: false, forbidden: false };
+    async function deleteToolFromServer(toolId) {
+      if (!getServerCreds().enabled || !sessionToken) return { ok: false, forbidden: false };
       const res = await ugRpc('ug_delete_tool', { p_token: sessionToken, p_id: toolId });
       if (res.ok) {
         logToSyncConsole(`Deleted asset ${toolId} from public.tools`, "success");
@@ -2430,8 +2250,8 @@
     }
 
     // newPin: only sent when an admin is setting a PIN for a single account. PINs are hashed by the server.
-    async function upsertStaffToSupabase(singleOrAll = null, newPin = null) {
-      if (!getSupabaseCreds().enabled || !sessionToken) return false;
+    async function upsertStaffToServer(singleOrAll = null, newPin = null) {
+      if (!getServerCreds().enabled || !sessionToken) return false;
       const list = singleOrAll ? (Array.isArray(singleOrAll) ? singleOrAll : [singleOrAll]) : staffAccounts;
       const payload = list.map(s => {
         const row = {
@@ -2454,8 +2274,8 @@
       return false;
     }
 
-    async function deleteStaffFromSupabase(name) {
-      if (!getSupabaseCreds().enabled || !sessionToken) return false;
+    async function deleteStaffFromServer(name) {
+      if (!getServerCreds().enabled || !sessionToken) return false;
       const res = await ugRpc('ug_delete_staff', { p_token: sessionToken, p_name: name });
       if (!res.ok) {
         showToast(String(res.error).includes('UG_CANNOT_DELETE_SELF') ? "You can't delete your own account" : "Could not remove staff member on the server", "error");
@@ -2464,8 +2284,8 @@
       return true;
     }
 
-    async function pushActivityLogToSupabase(logEntry) {
-      if (!getSupabaseCreds().enabled || !sessionToken) return false;
+    async function pushActivityLogToServer(logEntry) {
+      if (!getServerCreds().enabled || !sessionToken) return false;
       const res = await ugRpc('ug_add_log', {
         p_token: sessionToken,
         p_entry: {
@@ -2485,30 +2305,30 @@
       return false;
     }
 
-    async function pullAllFromSupabase(manualTrigger = false) {
-      const { enabled } = getSupabaseCreds();
+    async function pullAllFromServer(manualTrigger = false) {
+      const { enabled } = getServerCreds();
       if (!enabled) {
-        if (manualTrigger) showToast("Please enter your Supabase URL and Key first", "error");
+        if (manualTrigger) showToast("Open the hosted app to synchronize with its database", "error");
         return;
       }
 
       // Not signed in yet: only refresh the names shown on the login screen
       if (!sessionToken) {
         const ok = await refreshStaffListForLogin();
-        if (ok) updateCloudStatusBadge(true);
-        if (manualTrigger) showToast(ok ? "Staff list refreshed. Sign in to sync tools." : "Could not reach Supabase", ok ? "success" : "error");
+        if (ok) updateServerStatusBadge(true);
+        if (manualTrigger) showToast(ok ? "Staff list refreshed. Sign in to sync tools." : "Could not reach Server", ok ? "success" : "error");
         return;
       }
 
       const toolsRes = await ugRpc('ug_get_tools', { p_token: sessionToken });
       if (!toolsRes.ok) {
-        if (manualTrigger) showToast(toolsRes.offline ? "Could not reach Supabase URL" : "Sync failed", "error");
+        if (manualTrigger) showToast(toolsRes.offline ? "Could not reach Server URL" : "Sync failed", "error");
         return;
       }
       markSynced();
-      const cloudRows = Array.isArray(toolsRes.data) ? toolsRes.data : [];
+      const serverRows = Array.isArray(toolsRes.data) ? toolsRes.data : [];
 
-      const vehLogsRow = cloudRows.find(r => r.id === "__UG_VEHICLE_LOGS__");
+      const vehLogsRow = serverRows.find(r => r.id === "__UG_VEHICLE_LOGS__");
       if (vehLogsRow) {
         const rawVehJson = vehLogsRow.condition_notes || vehLogsRow.notes;
         if (rawVehJson) {
@@ -2521,13 +2341,13 @@
         }
       }
 
-      const realToolRows = cloudRows.filter(r => r.id !== "__UG_STAFF_CONFIG__" && r.id !== "__UG_VEHICLE_LOGS__");
+      const realToolRows = serverRows.filter(r => r.id !== "__UG_STAFF_CONFIG__" && r.id !== "__UG_VEHICLE_LOGS__");
       if (realToolRows.length === 0) {
-        await upsertToolsToSupabase(tools);
+        await upsertToolsToServer(tools);
       } else {
         const toolsToRePush = [];
         realToolRows.forEach(cRow => {
-          const mapped = mapSupabaseRowToTool(cRow);
+          const mapped = mapServerRowToTool(cRow);
           const upperId = mapped.id.toUpperCase();
 
           // Never re-import an asset or vehicle that was explicitly deleted locally
@@ -2536,7 +2356,7 @@
             const t = (typeof tomb === 'object') ? tomb : { at: Number(tomb) || 0, pending: false };
             if (t.pending) {
               // Deleted on this device but the server never confirmed it: retry the delete
-              deleteToolFromSupabase(mapped.id).then(r => {
+              deleteToolFromServer(mapped.id).then(r => {
                 if (r.ok) deletedAssetTimestamps[upperId] = { at: Date.now(), pending: false };
                 else if (r.forbidden) delete deletedAssetTimestamps[upperId];
               });
@@ -2583,7 +2403,7 @@
         });
 
         if (toolsToRePush.length > 0) {
-          upsertToolsToSupabase(toolsToRePush);
+          upsertToolsToServer(toolsToRePush);
         }
       }
 
@@ -2617,107 +2437,42 @@
       renderInventoryTable();
       renderActivityLogs();
       renderMasterControlTable();
-      if (manualTrigger) showToast("Synced latest tools, logs & staff from Supabase!");
+      if (manualTrigger) showToast("Synced latest tools, logs & staff from Server!");
     }
 
-    async function testSupabaseConnectionAndInspect() {
-      const urlInput = (document.getElementById('cfg-supabase-url')?.value || '').trim();
-      const keyInput = (document.getElementById('cfg-supabase-key')?.value || '').trim();
-      if (urlInput && keyInput) {
-        localStorage.setItem('ug_supabase_url', urlInput);
-        localStorage.setItem('ug_supabase_key', keyInput);
-      }
-      const { url, enabled } = getSupabaseCreds();
+    async function testServerConnectionAndInspect() {
+      const { url, enabled } = getServerCreds();
       if (!enabled) {
-        showToast("Enter your Supabase Project URL and API Key first", "error");
+        showToast("Open the hosted app to connect to its database", "error");
         return;
       }
 
-      logToSyncConsole(`Pinging ${url}/rest/v1/rpc/ug_list_staff...`, "info");
+      logToSyncConsole(`Checking ${url}/rest/v1/rpc/ug_list_staff...`, "info");
       const res = await ugRpc('ug_list_staff');
       if (!res.ok) {
-        logToSyncConsole(res.offline ? "Network error: could not reach Supabase" : `HTTP ${res.status}: ${res.error}. Have you run supabase-security.sql?`, "error");
+        logToSyncConsole(res.offline ? "Network error: could not reach the server" : `HTTP ${res.status}: ${res.error}. Update or restart the app to run database migrations.`, "error");
+        showToast("Could not connect to the server database", "error");
         return;
       }
       const count = Array.isArray(res.data) ? res.data.length : 0;
-      logToSyncConsole(`CONNECTED: secure API is installed, ${count} staff account(s).`, "success");
-      updateCloudStatusBadge(true);
-      showToast(`Connected! ${count} staff accounts in cloud.`);
+      logToSyncConsole(`CONNECTED: secure API is available, ${count} staff account(s).`, "success");
+      updateServerStatusBadge(true);
+      showToast(`Connected to the server database (${count} staff accounts).`);
     }
 
-    async function forcePushAllToolsToSupabase() {
-      const urlInput = (document.getElementById('cfg-supabase-url')?.value || '').trim();
-      const keyInput = (document.getElementById('cfg-supabase-key')?.value || '').trim();
-      if (urlInput && keyInput) {
-        localStorage.setItem('ug_supabase_url', urlInput);
-        localStorage.setItem('ug_supabase_key', keyInput);
-      }
-      const { enabled } = getSupabaseCreds();
-      if (!enabled) {
-        showToast("Enter your Supabase Project URL and Key first", "error");
+    async function handleHeaderSyncClick() {
+      if (!getServerCreds().enabled) {
+        switchTab('golive');
+        showToast("Open the hosted app to synchronize with the server database", "error");
         return;
       }
-      if (!sessionToken) {
-        showToast("Sign in with your cloud account first (lock & sign in again)", "error");
-        return;
-      }
-      logToSyncConsole(`Force-pushing ${tools.length} tools to Supabase...`, "info");
-      const ok = await upsertToolsToSupabase(tools);
-      if (getEffectivePermissions().canManagePermissions) await upsertStaffToSupabase();
-      await upsertVehicleLogsToSupabase();
-      if (ok) showToast("Pushed all tools & vehicles to Supabase!");
+      await pullAllFromServer(true);
     }
-
-    async function saveCloudConfigAndSync() {
-      let url = (document.getElementById('cfg-supabase-url')?.value || '').trim().replace(/\/+$/, '');
-      if (url.endsWith('/rest/v1')) url = url.slice(0, -8);
-      const key = (document.getElementById('cfg-supabase-key')?.value || '').trim();
-
-      if (!url || !key) {
-        showToast("Please provide both Supabase URL and Anon Key", "error");
-        return;
-      }
-
-      document.getElementById('cfg-supabase-url').value = url;
-      localStorage.setItem('ug_supabase_url', url);
-      localStorage.setItem('ug_supabase_key', key);
-
-      if (sessionToken) {
-        const ok = await upsertToolsToSupabase(tools);
-        await upsertVehicleLogsToSupabase();
-        await pullAllFromSupabase(false);
-        if (ok) showToast("Supabase Connected & Synced!");
-        return;
-      }
-
-      // Signed in locally (or not at all): connect, then require a fresh cloud sign-in
-      const ok = await refreshStaffListForLogin();
-      if (!ok) {
-        showToast("Could not reach the secure API. Run supabase-security.sql in Supabase first.", "error");
-        return;
-      }
-      updateCloudStatusBadge(true);
-      if (!cloudPollInterval) cloudPollInterval = setInterval(() => pullAllFromSupabase(false), 20000);
-      showToast("Supabase connected. Please sign in again with your PIN.");
-      if (currentUser) lockAndSwitchUser();
-    }
-
-    function clearCloudConfig() {
-      if (sessionToken) ugRpc('ug_logout', { p_token: sessionToken });
-      sessionToken = null;
-      localStorage.removeItem('ug_supabase_url');
-      localStorage.removeItem('ug_supabase_key');
-      document.getElementById('cfg-supabase-url').value = '';
-      document.getElementById('cfg-supabase-key').value = '';
-      updateCloudStatusBadge(false);
-      showToast("Disconnected from Cloud. Using Local Storage.");
-    }
-
-    function updateCloudStatusBadge(isConnected) {
+    function updateServerStatusBadge(isConnected) {
       const pill = document.getElementById('db-mode-pill');
-      const headerPill = document.getElementById('header-cloud-pill');
-      const headerDot = document.getElementById('header-cloud-dot');
-      const headerText = document.getElementById('header-cloud-text');
+      const headerPill = document.getElementById('header-server-pill');
+      const headerDot = document.getElementById('header-server-dot');
+      const headerText = document.getElementById('header-server-text');
 
       if (isConnected) {
         if (pill) {
@@ -2726,7 +2481,7 @@
         }
         if (headerPill) headerPill.className = "cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 transition";
         if (headerDot) headerDot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-ping";
-        if (headerText) headerText.innerText = "Cloud Synced";
+        if (headerText) headerText.innerText = sessionToken ? "Server Synced" : "Server Connected";
       } else {
         if (pill) {
           pill.innerText = "Mode: Local Browser Storage";
@@ -2736,22 +2491,6 @@
         if (headerDot) headerDot.className = "w-2 h-2 rounded-full bg-amber-400";
         if (headerText) headerText.innerText = "Local Mode";
       }
-    }
-
-    function validateSupabaseInputsLive() {
-      const url = document.getElementById('cfg-supabase-url')?.value.trim() || '';
-      const key = document.getElementById('cfg-supabase-key')?.value.trim() || '';
-      const hint = document.getElementById('key-validation-hint');
-      if (!hint) return;
-      if (url.startsWith('https://') && key.length > 20) {
-        hint.innerText = "Credentials format looks valid. Click 'Save Credentials & Push All Data Now'.";
-        hint.className = "text-[11px] text-emerald-400 mt-1 font-mono";
-      }
-    }
-
-    function toggleKeyVisibility() {
-      const input = document.getElementById('cfg-supabase-key');
-      if (input) input.type = input.type === 'password' ? 'text' : 'password';
     }
 
     // NAVIGATION TAB SWITCHING
@@ -3078,7 +2817,7 @@
             notes
           };
           vehicleMileageLogs.unshift(mileageEntry);
-          upsertVehicleLogsToSupabase();
+          upsertVehicleLogsToServer();
         }
 
         tools[targetIndex] = {
@@ -3120,8 +2859,8 @@
 
       // Push only the asset that changed. Pushing the whole local list could resurrect assets
       // that were deleted on another device since this one last synced.
-      upsertToolsToSupabase([tools[targetIndex]]);
-      pushActivityLogToSupabase(logEntry);
+      upsertToolsToServer([tools[targetIndex]]);
+      pushActivityLogToServer(logEntry);
 
       const jobInput = document.getElementById('checkout-job');
       if (jobInput) jobInput.value = '';
@@ -3601,8 +3340,8 @@
       // Remember this deletion. "pending" = not yet confirmed by the server (retried on next sync).
       // Once confirmed, the server is the only source of truth: if the same ID is added again later
       // (e.g. by an import or another device), this device accepts it instead of deleting it again.
-      const cloud = getSupabaseCreds().enabled;
-      deletedAssetTimestamps[upperId] = { at: Date.now(), pending: cloud };
+      const serverConnected = getServerCreds().enabled;
+      deletedAssetTimestamps[upperId] = { at: Date.now(), pending: serverConnected };
       localToolLockTimestamps[removed.id] = Date.now();
 
       tools.splice(idx, 1);
@@ -3612,8 +3351,8 @@
       renderFleetAndMileageView();
       closeDeleteToolModal();
 
-      if (cloud) {
-        const res = await deleteToolFromSupabase(removed.id);
+      if (serverConnected) {
+        const res = await deleteToolFromServer(removed.id);
         if (res.forbidden) {
           // Server refused: put the asset back so this screen matches the server
           delete deletedAssetTimestamps[upperId];
@@ -3666,7 +3405,7 @@
       persistState();
       renderFleetAndMileageView();
       closeDeleteMileageModal();
-      await upsertVehicleLogsToSupabase();
+      await upsertVehicleLogsToServer();
       showToast(`Deleted mileage trip entry ${removed.id}`);
     }
 
@@ -3714,7 +3453,7 @@
       persistState();
       renderInventoryTable();
       renderFleetAndMileageView();
-      upsertToolsToSupabase([newTool]);
+      upsertToolsToServer([newTool]);
       closeAddToolModal();
       document.getElementById('new-tool-id').value = '';
       document.getElementById('new-tool-name').value = '';
@@ -3802,7 +3541,7 @@
         }
         persistState();
         renderInventoryTable();
-        if (imported.length) upsertToolsToSupabase(imported);
+        if (imported.length) upsertToolsToServer(imported);
         showToast(`Imported ${added} assets from CSV`);
       };
       reader.readAsText(file);
@@ -3878,15 +3617,6 @@
       event.target.value = '';
     }
 
-    function copyTrueNasCompose() {
-      const text = document.getElementById('truenas-compose-block').innerText;
-      navigator.clipboard.writeText(text).then(() => showToast("Copied TrueNAS Docker Compose YAML!"));
-    }
-
-    function downloadStandaloneIndexHtml() {
-      downloadStandaloneApp(true, 'index.html');
-    }
-
     function stopCamera() {
       if (qrScanInterval) clearInterval(qrScanInterval);
       if (cameraStream) {
@@ -3904,60 +3634,14 @@
     function runSystemHealthCheck() {
       const box = document.getElementById('diagnostics-results-box');
       const content = document.getElementById('diagnostics-content');
-      const { url, enabled } = getSupabaseCreds();
+      const { url, enabled } = getServerCreds();
       box.classList.remove('hidden');
       content.innerHTML = `
         <div class="text-emerald-400">✔ Staff Roster Loaded: ${staffAccounts.length} Ultimate Group team members active</div>
         <div class="text-emerald-400">✔ Asset Register Loaded: ${tools.length} tools in register</div>
         <div class="text-emerald-400">✔ Optical QR Decoder (jsQR): ${typeof jsQR === 'function' ? 'Ready' : 'Not loaded'}</div>
-        <div class="${enabled ? 'text-emerald-400' : 'text-amber-400'}">✔ Cloud Database: ${enabled ? `Connected (${url})` : 'Local Browser Storage Mode'}</div>
+        <div class="${enabled ? 'text-emerald-400' : 'text-amber-400'}">✔ Server Database: ${enabled ? `Connected (${url})` : 'Local Browser Storage Mode'}</div>
       `;
-    }
-
-    // Download Standalone App with Supabase Credentials Baked In & Auth Gate Locked
-    function downloadStandaloneApp(includeSupabase = true, customFilename = 'Ultimate_Group_Asset_Tracker.html') {
-      // Clone the document so we can reset the live DOM state before exporting
-      const clone = document.documentElement.cloneNode(true);
-
-      // 1. Ensure the Sign-In Authentication Gate is visible (unlocked = false) in the downloaded HTML
-      const authGate = clone.querySelector('#auth-gate-overlay');
-      if (authGate) {
-        authGate.classList.remove('hidden');
-      }
-
-      // 2. Hide any role preview banner
-      const previewBanner = clone.querySelector('#role-preview-banner');
-      if (previewBanner) {
-        previewBanner.classList.add('hidden');
-        previewBanner.classList.remove('flex');
-      }
-
-      // 3. Reset views so Scanner tab is the default active view behind the login screen
-      ['scan', 'checkouts', 'inventory', 'fleet', 'master', 'golive'].forEach(t => {
-        const view = clone.querySelector(`#view-${t}`);
-        if (view) {
-          if (t === 'scan') view.classList.remove('hidden');
-          else view.classList.add('hidden');
-        }
-      });
-
-      // 4. Clear any typed values in the login or config inputs of the static snapshot
-      const pinInput = clone.querySelector('#login-pin-input');
-      if (pinInput) pinInput.setAttribute('value', '');
-
-      let htmlContent = clone.outerHTML;
-      const { url, key } = getSupabaseCreds();
-      if (includeSupabase && url && key) {
-        htmlContent = htmlContent
-          .replace(/const PRECONFIGURED_SUPABASE_URL = "[^"]*";/, `const PRECONFIGURED_SUPABASE_URL = "${url}";`)
-          .replace(/const PRECONFIGURED_SUPABASE_KEY = "[^"]*";/, `const PRECONFIGURED_SUPABASE_KEY = "${key}";`);
-      }
-      const blob = new Blob(['<!DOCTYPE html>\n' + htmlContent], { type: 'text/html' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = customFilename;
-      a.click();
-      showToast(`Downloaded ${customFilename} (Password Gate Locked)!`);
     }
 
     function showToast(msg, type = "success") {
@@ -3977,7 +3661,6 @@
 
     // INITIALIZE APPLICATION ON LOAD
     window.addEventListener('DOMContentLoaded', () => {
-      applySelfHostedUI();
       populateLoginDropdown();
       populateStaffDropdown();
       populateDirectAssetSelect();
@@ -3987,18 +3670,15 @@
       renderInventoryTable();
       renderFleetAndMileageView();
       renderMasterControlTable();
-
-      const { url, key, enabled } = getSupabaseCreds();
-      if (url && document.getElementById('cfg-supabase-url')) document.getElementById('cfg-supabase-url').value = url;
-      if (key && document.getElementById('cfg-supabase-key')) document.getElementById('cfg-supabase-key').value = key;
+      const { enabled } = getServerCreds();
 
       // Always ensure the PIN sign-in gate is shown when the app opens
       document.getElementById('auth-gate-overlay').classList.remove('hidden');
 
       if (enabled) {
-        updateCloudStatusBadge(true);
-        pullAllFromSupabase(false);
-        cloudPollInterval = setInterval(() => pullAllFromSupabase(false), 20000);
+        updateServerStatusBadge(true);
+        pullAllFromServer(false);
+        serverPollInterval = setInterval(() => pullAllFromServer(false), 20000);
       }
     });
   </script>

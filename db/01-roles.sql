@@ -1,4 +1,4 @@
--- Roles PostgREST needs (the same names Supabase uses, so 02-schema.sql works unchanged).
+-- Roles PostgREST needs (the standard role names expected by PostgREST).
 -- Run by the "migrate" container with:  psql -v auth_pw=<AUTHENTICATOR_PASSWORD> -f 01-roles.sql
 --   anon           : what every web request runs as. Can only call the ug_* functions.
 --   authenticated  : unused here; exists so the schema script's GRANTs succeed.

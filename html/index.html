@@ -799,14 +799,45 @@
           <button type="button" disabled class="text-left rounded-xl border border-zinc-800 bg-zinc-950/40 p-3 opacity-60 cursor-not-allowed">
             <span class="block text-sm font-extrabold text-zinc-300">UES</span><span class="text-[11px] text-zinc-500">Ultimate Electrical Solutions · Template coming soon</span>
           </button>
-          <button type="button" disabled class="text-left rounded-xl border border-zinc-800 bg-zinc-950/40 p-3 opacity-60 cursor-not-allowed">
-            <span class="block text-sm font-extrabold text-zinc-300">USS</span><span class="text-[11px] text-zinc-500">Ultimate Solar Systems · Template coming soon</span>
+          <button type="button" onclick="selectJobCardCompany('USS')" id="jobcard-company-uss" class="text-left rounded-xl border border-zinc-800 bg-zinc-950/40 p-3 transition">
+            <span class="block text-sm font-extrabold text-zinc-300">USS</span><span class="text-[11px] text-zinc-400">Ultimate Solar Systems · Available</span>
           </button>
         </div>
 
         <form id="sinabo-jobcard-form" onsubmit="submitJobCard(event)" class="space-y-5">
           <input type="hidden" id="jobcard-company" value="SINABO" />
-          <div class="rounded-xl border border-zinc-800 bg-zinc-950/50 p-3 sm:p-4">
+          <div id="uss-jobcard-fields" class="hidden space-y-5">
+            <section class="rounded-xl border border-zinc-800 bg-zinc-950/50 p-3 sm:p-4">
+              <h3 class="text-xs font-bold uppercase tracking-wider text-amber-300 mb-3">Job details</h3>
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <label class="text-[11px] text-zinc-400">Job Card No. *<input id="uss-card-no" maxlength="40" class="jobcard-input" /></label>
+                <label class="text-[11px] text-zinc-400">Date *<input id="uss-date" type="date" class="jobcard-input" /></label>
+                <label class="text-[11px] text-zinc-400">Job No.<input id="uss-job-no" maxlength="100" class="jobcard-input" /></label>
+                <label class="text-[11px] text-zinc-400">Customer *<input id="uss-customer" maxlength="200" class="jobcard-input" /></label>
+                <label class="text-[11px] text-zinc-400">Quote No.<input id="uss-quote-no" maxlength="100" class="jobcard-input" /></label>
+                <label class="text-[11px] text-zinc-400">Order No.<input id="uss-order-no" maxlength="100" class="jobcard-input" /></label>
+                <label class="text-[11px] text-zinc-400">Required Date<input id="uss-required-date" type="date" class="jobcard-input" /></label>
+                <label class="text-[11px] text-zinc-400">Site *<input id="uss-site" maxlength="200" class="jobcard-input" /></label>
+                <label class="text-[11px] text-zinc-400">Personnel on site<input id="uss-personnel" maxlength="500" placeholder="Names separated by commas" class="jobcard-input" /></label>
+                <label class="text-[11px] text-zinc-400">Odometer opening<input id="uss-odo-open" maxlength="80" class="jobcard-input" /></label>
+                <label class="text-[11px] text-zinc-400">Odometer closing<input id="uss-odo-close" maxlength="80" class="jobcard-input" /></label>
+                <label class="text-[11px] text-zinc-400">Total kilometres<input id="uss-kilometres" maxlength="80" class="jobcard-input" /></label>
+                <label class="text-[11px] text-zinc-400">Time on site: Start<input id="uss-time-start" maxlength="40" class="jobcard-input" /></label>
+                <label class="text-[11px] text-zinc-400">Finish<input id="uss-time-finish" maxlength="40" class="jobcard-input" /></label>
+                <label class="text-[11px] text-zinc-400">Total hours<input id="uss-hours" maxlength="40" class="jobcard-input" /></label>
+              </div>
+            </section>
+            <section class="rounded-xl border border-zinc-800 bg-zinc-950/50 p-3 sm:p-4 space-y-3">
+              <h3 class="text-xs font-bold uppercase tracking-wider text-amber-300">Job description and works</h3>
+              <label class="block text-[11px] text-zinc-400">Tasks<textarea id="uss-tasks" rows="5" maxlength="3000" class="jobcard-input"></textarea></label>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3"><label class="text-[11px] text-zinc-400">Works complete<textarea id="uss-complete" rows="3" maxlength="1500" class="jobcard-input"></textarea></label><label class="text-[11px] text-zinc-400">Works in progress<textarea id="uss-progress" rows="3" maxlength="1500" class="jobcard-input"></textarea></label></div>
+              <label class="block text-[11px] text-zinc-400">Additional work / equipment<textarea id="uss-additional" rows="3" maxlength="1500" class="jobcard-input"></textarea></label>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3"><label class="text-[11px] text-zinc-400">Requested by<input id="uss-requested-by" maxlength="160" class="jobcard-input" /></label><label class="text-[11px] text-zinc-400">Request date<input id="uss-request-date" type="date" class="jobcard-input" /></label></div>
+              <label class="block text-[11px] text-zinc-400">Remarks<textarea id="uss-remarks" rows="3" maxlength="2000" class="jobcard-input"></textarea></label>
+              <fieldset class="flex gap-5 text-sm text-zinc-200"><legend class="text-[11px] text-zinc-400 mb-2">Billing</legend><label><input type="radio" name="uss-billing" value="Invoice" /> Invoice</label><label><input type="radio" name="uss-billing" value="No Charge" /> No Charge</label></fieldset>
+            </section>
+          </div>
+          <div id="sinabo-generator-details" class="rounded-xl border border-zinc-800 bg-zinc-950/50 p-3 sm:p-4">
             <h3 class="text-xs font-bold uppercase tracking-wider text-amber-300 mb-3">Service schedule details</h3>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <label class="text-[11px] text-zinc-400">Service Schedule No. *<input id="jc-schedule" required maxlength="40" class="jobcard-input" autocomplete="off" /></label>
@@ -821,13 +852,13 @@
             </div>
           </div>
 
-          <div class="rounded-xl border border-zinc-800 bg-zinc-950/50 p-3 sm:p-4">
+          <div id="sinabo-generator-checks-section" class="rounded-xl border border-zinc-800 bg-zinc-950/50 p-3 sm:p-4">
             <h3 class="text-xs font-bold uppercase tracking-wider text-amber-300 mb-1">Generator checks</h3>
             <p class="text-[10px] text-zinc-500 mb-3">Choose Normal or Abnormal for each check. Add a note if required.</p>
             <div id="sinabo-checks" class="grid grid-cols-1 lg:grid-cols-2 gap-2"></div>
           </div>
 
-          <div class="rounded-xl border border-zinc-800 bg-zinc-950/50 p-3 sm:p-4">
+          <div id="sinabo-generator-readings-section" class="rounded-xl border border-zinc-800 bg-zinc-950/50 p-3 sm:p-4">
             <h3 class="text-xs font-bold uppercase tracking-wider text-amber-300 mb-3">Alternator and generator readings</h3>
             <div id="sinabo-readings" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
           </div>
@@ -882,7 +913,7 @@
               <div class="min-w-0"><div class="flex items-center justify-between gap-2 mb-1"><span class="text-xs font-semibold text-zinc-200">Customer signature *</span><button type="button" onclick="clearJobCardSignature('customer')" class="text-[10px] text-zinc-400">Clear</button></div><canvas id="jc-signature-customer" class="jobcard-signature" aria-label="Customer signature pad"></canvas></div>
               <div class="min-w-0"><div class="flex items-center justify-between gap-2 mb-1"><span class="text-xs font-semibold text-zinc-200">Serviceman signature *</span><button type="button" onclick="clearJobCardSignature('serviceman')" class="text-[10px] text-zinc-400">Clear</button></div><canvas id="jc-signature-serviceman" class="jobcard-signature" aria-label="Serviceman signature pad"></canvas></div>
             </div>
-            <p class="text-[10px] text-zinc-500 mt-2">Both signatures are included in the PDF sent to the SINABO folder.</p>
+            <p class="text-[10px] text-zinc-500 mt-2">Both signatures are included in the PDF sent to the selected company folder.</p>
           </div>
 
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-zinc-800 pt-4">
@@ -3010,8 +3041,35 @@
       image.src = dataUrl;
     }
 
+    function selectJobCardCompany(company) {
+      const selected = ['SINABO', 'USS'].includes(company) ? company : 'SINABO';
+      document.getElementById('jobcard-company').value = selected;
+      const uss = selected === 'USS';
+      const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+      if (uss && !document.getElementById('uss-date')?.value) document.getElementById('uss-date').value = today;
+      document.getElementById('uss-jobcard-fields')?.classList.toggle('hidden', !uss);
+      ['sinabo-generator-details','sinabo-generator-checks-section','sinabo-generator-readings-section','sinabo-personnel','sinabo-run-tests','sinabo-control-tests','sinabo-parts'].forEach(id => document.getElementById(id)?.closest('.rounded-xl')?.classList.toggle('hidden', uss));
+      ['sinabo','uss'].forEach(key => {
+        const button = document.getElementById(`jobcard-company-${key}`);
+        button?.classList.toggle('border-amber-400', key.toUpperCase() === selected);
+        button?.classList.toggle('bg-amber-400/10', key.toUpperCase() === selected);
+      });
+      document.querySelector('#sinabo-jobcard-form button[type="submit"]')?.classList.toggle('bg-amber-400', true);
+    }
+
     function collectJobCardData(includeSignatures = true) {
       const value = id => (document.getElementById(id)?.value || '').trim();
+      const company = document.getElementById('jobcard-company')?.value || 'SINABO';
+      const servicemanName = currentUser?.name || value('jc-serviceman');
+      if (company === 'USS') return {
+        clientId: activeJobCardDraftId || newJobCardId(), company: 'USS', serviceScheduleNo: value('uss-card-no'), date: value('uss-date'),
+        jobNo: value('uss-job-no'), customer: value('uss-customer'), quoteNo: value('uss-quote-no'), orderNo: value('uss-order-no'), requiredDate: value('uss-required-date'), site: value('uss-site'),
+        personnel: value('uss-personnel'), odometerOpening: value('uss-odo-open'), odometerClosing: value('uss-odo-close'), kilometres: value('uss-kilometres'),
+        timeStart: value('uss-time-start'), timeFinish: value('uss-time-finish'), totalHours: value('uss-hours'), tasks: value('uss-tasks'), worksComplete: value('uss-complete'),
+        worksInProgress: value('uss-progress'), additionalWork: value('uss-additional'), requestedBy: value('uss-requested-by'), requestDate: value('uss-request-date'),
+        remarks: value('uss-remarks'), billing: document.querySelector('input[name="uss-billing"]:checked')?.value || '', customerRepName: value('jc-customer-rep'), servicemanName,
+        customerSignature: includeSignatures ? jobCardSignatureData('customer') : '', servicemanSignature: includeSignatures ? jobCardSignatureData('serviceman') : ''
+      };
       const checks = SINABO_CHECK_ITEMS.map((label, i) => ({ label, result: value(`jc-check-${i}`), notes: value(`jc-check-note-${i}`) }));
       const readings = SINABO_READING_ITEMS.map(([label, unit], i) => ({ label, unit, value: value(`jc-reading-${i}`), notes: '' }));
       const collectTests = (items, prefix) => items.map((item, i) => { const config = typeof item === 'string' ? { label: item, unit: '' } : item; return { label: config.label, unit: config.unit || '', result: value(`${prefix}-result-${i}`), notes: value(`${prefix}-note-${i}`) }; });
@@ -3129,6 +3187,12 @@
       if (!draft?.data) return;
       activeJobCardDraftId = draft.clientId;
       const data = draft.data;
+      selectJobCardCompany(data.company || 'SINABO');
+      if (data.company === 'USS') {
+        const map = { 'uss-card-no':'serviceScheduleNo','uss-date':'date','uss-job-no':'jobNo','uss-customer':'customer','uss-quote-no':'quoteNo','uss-order-no':'orderNo','uss-required-date':'requiredDate','uss-site':'site','uss-personnel':'personnel','uss-odo-open':'odometerOpening','uss-odo-close':'odometerClosing','uss-kilometres':'kilometres','uss-time-start':'timeStart','uss-time-finish':'timeFinish','uss-hours':'totalHours','uss-tasks':'tasks','uss-complete':'worksComplete','uss-progress':'worksInProgress','uss-additional':'additionalWork','uss-requested-by':'requestedBy','uss-request-date':'requestDate','uss-remarks':'remarks' };
+        Object.entries(map).forEach(([id,key]) => { const el=document.getElementById(id); if(el) el.value=data[key] || ''; });
+        const billing = document.querySelector(`input[name="uss-billing"][value="${data.billing}"]`); if (billing) billing.checked = true;
+      }
       const map = { 'jc-schedule': 'serviceScheduleNo', 'jc-date': 'date', 'jc-unit-ref': 'jobNo', 'jc-customer': 'customer', 'jc-order-no': 'orderNo', 'jc-site': 'site', 'jc-hour-metre': 'hourMetre', 'jc-engine-type': 'engineType', 'jc-alternator-type': 'alternatorType', 'jc-travel-time': 'travelTime', 'jc-time-on-site': 'timeOnSite', 'jc-kilometres': 'kilometres', 'jc-remarks': 'remarks', 'jc-customer-rep': 'customerRepName' };
       Object.entries(map).forEach(([id, key]) => { const el = document.getElementById(id); if (el) el.value = data[key] || (key === 'jobNo' ? data.unitRef : '') || ''; });
       (data.checks || []).forEach((row, i) => { const sel = document.getElementById(`jc-check-${i}`); const note = document.getElementById(`jc-check-note-${i}`); if (sel) sel.value = row.result || ''; if (note) note.value = row.notes || ''; });
@@ -3188,6 +3252,10 @@
       const button = document.getElementById('jobcard-submit-button');
       const data = collectJobCardData(true);
       activeJobCardDraftId = data.clientId;
+      if (data.company === 'USS' && (!data.serviceScheduleNo || !data.date || !data.customer || !data.site)) {
+        showToast('Complete Job Card No., date, customer and site before submitting.', 'error');
+        return;
+      }
       if (!data.customerSignature || !data.servicemanSignature) {
         const saved = await saveJobCardDraft(false);
         if (!saved) return;
@@ -3195,7 +3263,7 @@
         showToast('Both signatures are required before the signed PDF can be submitted.', 'error');
         return;
       }
-      if (data.checks.some(row => !row.result)) {
+      if (data.company === 'SINABO' && data.checks.some(row => !row.result)) {
         showToast('Select Normal or Abnormal for every generator check before submitting.', 'error');
         document.getElementById(`jc-check-${data.checks.findIndex(row => !row.result)}`)?.focus();
         return;

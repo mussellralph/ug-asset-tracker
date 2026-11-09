@@ -49,7 +49,8 @@ function signatureBuffer(value) {
 
 function createPdf(data, signer, signatures) {
   return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ size: 'A4', margin: 38, bufferPages: true, info: { Title: 'SINABO Generator Service Schedule', Author: signer } });
+    const isUss = data.company === 'USS';
+    const doc = new PDFDocument({ size: 'A4', margin: 38, bufferPages: true, info: { Title: `${data.company || 'SINABO'} Job Card`, Author: signer } });
     const chunks = [];
     doc.on('data', chunk => chunks.push(chunk));
     doc.on('error', reject);
@@ -128,17 +129,24 @@ function createPdf(data, signer, signatures) {
       doc.y = y + 2;
     }
 
-    const logoWidth = 190;
-    const logoHeight = logoWidth * 120 / 326;
+    const logoWidth = isUss ? 220 : 190;
+    const logoHeight = isUss ? logoWidth * 1032 / 2831 : logoWidth * 120 / 326;
     const logoX = (doc.page.width - logoWidth) / 2;
     const logoY = doc.page.margins.top;
-    doc.image(path.join(__dirname, 'assets', 'sinabo-logo.png'), logoX, logoY, { width: logoWidth });
+    doc.image(path.join(__dirname, 'assets', isUss ? 'uss-logo.png' : 'sinabo-logo.png'), logoX, logoY, { width: logoWidth });
     doc.x = doc.page.margins.left;
     doc.y = logoY + logoHeight + 7;
     doc.fillColor(ink).font('Helvetica-Bold').fontSize(12)
-      .text('SERVICE SCHEDULE', doc.page.margins.left, doc.y, { width, align: 'center' });
+      .text(isUss ? `JOB CARD NO. ${clean(data.serviceScheduleNo, 40)}` : 'SERVICE SCHEDULE', doc.page.margins.left, doc.y, { width, align: 'center' });
     doc.x = doc.page.margins.left;
     doc.moveDown(0.5);
+    if (isUss) {
+      grid([['Date', data.date], ['Job No.', data.jobNo], ['Customer', data.customer], ['Quote No.', data.quoteNo], ['Order No.', data.orderNo], ['Required Date', data.requiredDate], ['Site', data.site]], 2);
+      heading('Personnel, Odometer and Time on Site');
+      grid([['Personnel', data.personnel], ['Odometer Opening', data.odometerOpening], ['Odometer Closing', data.odometerClosing], ['Total Kilometres', data.kilometres], ['Start', data.timeStart], ['Finish', data.timeFinish], ['Total Hours', data.totalHours]], 3);
+      heading('Job Description and Works');
+      grid([['Tasks', data.tasks], ['Works Complete', data.worksComplete], ['Works In Progress', data.worksInProgress], ['Additional Work / Equipment', data.additionalWork], ['Requested By', data.requestedBy], ['Request Date', data.requestDate], ['Remarks', data.remarks], ['Billing', data.billing]], 1);
+    } else {
     grid([
       ['Service Schedule No.', data.serviceScheduleNo], ['Date', data.date],
       ['Job No.', data.jobNo || data.unitRef], ['Customer', data.customer],
@@ -166,7 +174,8 @@ function createPdf(data, signer, signatures) {
     grid([['Travel time', data.travelTime], ['Time on site', data.timeOnSite], ['Kilometres', data.kilometres], ['Remarks', data.remarks]], 2);
 
     if (doc.y > 625) doc.addPage();
-    heading('Acknowledgement and signatures');
+    }
+    heading(isUss ? 'Customer and Technician Signatures' : 'Acknowledgement and signatures');
     grid([['Customer representative name (print)', data.customerRepName], ['Serviceman name (print)', signer]], 2);
     const sigY = doc.y + 4;
     const sigWidth = (width - 18) / 2;
@@ -190,8 +199,8 @@ async function handleSubmit(req, res) {
     const data = await readJson(req);
     const company = clean(data.company, 20).toUpperCase();
     if (!allowedCompanies.has(company)) return send(res, 400, { error: 'Select a valid company.' });
-    if (company !== 'SINABO') return send(res, 400, { error: 'That job card template is not available yet.' });
-    if (!clean(data.customer) || !clean(data.site) || !clean(data.serviceScheduleNo) || !clean(data.jobNo || data.unitRef)) return send(res, 400, { error: 'Complete the customer, site, service schedule number and Job No.' });
+    if (company === 'SINABO' && (!clean(data.customer) || !clean(data.site) || !clean(data.serviceScheduleNo) || !clean(data.jobNo || data.unitRef))) return send(res, 400, { error: 'Complete the customer, site, service schedule number and Job No.' });
+    if (company === 'USS' && (!clean(data.customer) || !clean(data.site) || !clean(data.serviceScheduleNo) || !clean(data.date))) return send(res, 400, { error: 'Complete the date, customer, site and Job Card No.' });
     const clientId = clean(data.clientId, 120);
     if (clientId.length < 8) return send(res, 400, { error: 'Submission reference is missing. Please try again.' });
 
@@ -209,8 +218,8 @@ async function handleSubmit(req, res) {
     const id = crypto.createHash('sha256').update(clientId).digest('hex').slice(0, 32);
     const previous = await client.query('SELECT company, file_name AS "fileName", submitted_by AS "submittedBy" FROM public.job_cards WHERE id = $1', [id]);
     if (previous.rowCount) return send(res, 200, { ok: true, id, ...previous.rows[0], alreadySubmitted: true });
-    const jobNo = clean(data.jobNo || data.unitRef, 80).replace(/[^A-Za-z0-9_-]/g, '_');
-    const fileName = `SINABO_JC_${jobNo}.pdf`;
+    const jobNo = clean(company === 'USS' ? data.serviceScheduleNo : (data.jobNo || data.unitRef), 80).replace(/[^A-Za-z0-9_-]/g, '_');
+    const fileName = `${company}_JC_${jobNo}.pdf`;
     const directory = path.join(outputRoot, company);
     finalPath = path.join(directory, fileName);
     const pdf = await createPdf(data, submittedBy, signatures);

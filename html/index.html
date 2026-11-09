@@ -75,6 +75,29 @@
       table th, table td { overflow-wrap: anywhere; vertical-align: top; }
     }
 
+    @media (min-width: 768px) and (max-width: 1199px) {
+      .desktop-tab-nav {
+        display: grid !important;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.5rem;
+      }
+      .desktop-tab-nav > button {
+        width: 100%;
+        min-width: 0;
+        min-height: 3.25rem;
+        margin-left: 0 !important;
+        padding: 0.5rem 0.65rem;
+        gap: 0.45rem;
+        line-height: 1.25;
+        text-align: center;
+        white-space: normal;
+        word-break: normal;
+        overflow-wrap: normal;
+        text-wrap: balance;
+      }
+      .desktop-tab-nav .tab-nav-count { display: inline-block; white-space: nowrap; }
+    }
+
 
 
     /* Print styling for QR sticker labels */
@@ -240,24 +263,24 @@
   <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6 space-y-6">
 
     <!-- DESKTOP / TABLET NAV TABS -->
-    <nav class="hidden md:flex items-center space-x-2 bg-[#18181B] p-1.5 rounded-xl border border-zinc-800">
+    <nav class="desktop-tab-nav hidden md:flex items-center space-x-2 bg-[#18181B] p-1.5 rounded-xl border border-zinc-800">
       <button onclick="switchTab('scan')" id="tab-btn-scan" class="flex-1 py-2.5 px-4 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition duration-150 bg-[#C41E3A] text-white shadow-md">
         <i class="fa-solid fa-qrcode"></i> QR Sign-Out / Sign-In
       </button>
       <button onclick="switchTab('checkouts')" id="tab-btn-checkouts" class="flex-1 py-2.5 px-4 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition duration-150 text-zinc-400 hover:text-white hover:bg-zinc-800/70">
-        <i class="fa-solid fa-gauge-high"></i> Manager Dashboard (<span id="nav-checkout-count">0</span> Out)
+        <i class="fa-solid fa-gauge-high"></i> Manager Dashboard <span class="tab-nav-count">(<span id="nav-checkout-count">0</span> Out)</span>
       </button>
       <button onclick="switchTab('inventory')" id="tab-btn-inventory" class="flex-1 py-2.5 px-4 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition duration-150 text-zinc-400 hover:text-white hover:bg-zinc-800/70">
         <i class="fa-solid fa-boxes-stacked"></i> Master Asset Register
       </button>
       <button onclick="switchTab('fleet')" id="tab-btn-fleet" class="flex-1 py-2.5 px-4 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition duration-150 text-zinc-400 hover:text-white hover:bg-zinc-800/70">
-        <i class="fa-solid fa-truck-pickup text-sky-400"></i> Fleet &amp; Mileage (<span id="nav-fleet-count">3</span>)
+        <i class="fa-solid fa-truck-pickup text-sky-400"></i> Fleet &amp; Mileage <span class="tab-nav-count">(<span id="nav-fleet-count">3</span>)</span>
       </button>
       <button onclick="switchTab('jobcards')" id="tab-btn-jobcards" class="flex-1 py-2.5 px-3 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition duration-150 text-zinc-400 hover:text-white hover:bg-zinc-800/70">
         <i class="fa-solid fa-file-signature text-amber-400"></i> Job Cards
       </button>
       <button onclick="switchTab('master')" id="tab-btn-master" class="flex-1 py-2.5 px-4 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition duration-150 text-zinc-400 hover:text-white hover:bg-zinc-800/70">
-        <i class="fa-solid fa-user-shield text-[#ff4d6d]"></i> Master Control (<span id="header-staff-count">36</span>)
+        <i class="fa-solid fa-user-shield text-[#ff4d6d]"></i> Master Control <span class="tab-nav-count">(<span id="header-staff-count">36</span>)</span>
       </button>
       <button onclick="switchTab('golive')" id="tab-btn-golive" class="flex-1 py-2.5 px-4 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition duration-150 text-zinc-400 hover:text-white hover:bg-zinc-800/70">
         <i class="fa-solid fa-cloud-arrow-up text-emerald-400"></i> Server &amp; Sync

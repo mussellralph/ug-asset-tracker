@@ -3047,6 +3047,8 @@
       const selected = ['SINABO', 'USS'].includes(company) ? company : 'SINABO';
       document.getElementById('jobcard-company').value = selected;
       const uss = selected === 'USS';
+      ['jc-schedule', 'jc-date', 'jc-customer', 'jc-site'].forEach(id => { const input = document.getElementById(id); if (input) input.required = !uss; });
+      ['uss-job-no', 'uss-date', 'uss-customer', 'uss-site'].forEach(id => { const input = document.getElementById(id); if (input) input.required = uss; });
       const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
       if (uss && !document.getElementById('uss-date')?.value) document.getElementById('uss-date').value = today;
       document.getElementById('uss-jobcard-fields')?.classList.toggle('hidden', !uss);

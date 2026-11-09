@@ -141,7 +141,7 @@ function createPdf(data, signer, signatures) {
     doc.moveDown(0.5);
     grid([
       ['Service Schedule No.', data.serviceScheduleNo], ['Date', data.date],
-      ['Unit reference number', data.unitRef], ['Customer', data.customer],
+      ['Job No.', data.jobNo || data.unitRef], ['Customer', data.customer],
       ['Order number', data.orderNo], ['Site', data.site],
       ['Hour metre', data.hourMetre], ['Engine type', data.engineType],
       ['Alternator type', data.alternatorType]
@@ -191,7 +191,7 @@ async function handleSubmit(req, res) {
     const company = clean(data.company, 20).toUpperCase();
     if (!allowedCompanies.has(company)) return send(res, 400, { error: 'Select a valid company.' });
     if (company !== 'SINABO') return send(res, 400, { error: 'That job card template is not available yet.' });
-    if (!clean(data.customer) || !clean(data.site) || !clean(data.serviceScheduleNo)) return send(res, 400, { error: 'Complete the customer, site and service schedule number.' });
+    if (!clean(data.customer) || !clean(data.site) || !clean(data.serviceScheduleNo) || !clean(data.jobNo || data.unitRef)) return send(res, 400, { error: 'Complete the customer, site, service schedule number and Job No.' });
     const clientId = clean(data.clientId, 120);
     if (clientId.length < 8) return send(res, 400, { error: 'Submission reference is missing. Please try again.' });
 
@@ -209,9 +209,8 @@ async function handleSubmit(req, res) {
     const id = crypto.createHash('sha256').update(clientId).digest('hex').slice(0, 32);
     const previous = await client.query('SELECT company, file_name AS "fileName", submitted_by AS "submittedBy" FROM public.job_cards WHERE id = $1', [id]);
     if (previous.rowCount) return send(res, 200, { ok: true, id, ...previous.rows[0], alreadySubmitted: true });
-    const schedule = clean(data.serviceScheduleNo, 40).replace(/[^A-Za-z0-9_-]/g, '_');
-    const datePart = clean(data.date, 20).replace(/[^0-9-]/g, '') || new Date().toISOString().slice(0, 10);
-    const fileName = `SINABO_${datePart}_${schedule}_${id.slice(0, 8)}.pdf`;
+    const jobNo = clean(data.jobNo || data.unitRef, 80).replace(/[^A-Za-z0-9_-]/g, '_');
+    const fileName = `SINABO_${jobNo}.pdf`;
     const directory = path.join(outputRoot, company);
     finalPath = path.join(directory, fileName);
     const pdf = await createPdf(data, submittedBy, signatures);

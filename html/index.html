@@ -811,7 +811,7 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <label class="text-[11px] text-zinc-400">Service Schedule No. *<input id="jc-schedule" required maxlength="40" class="jobcard-input" autocomplete="off" /></label>
               <label class="text-[11px] text-zinc-400">Date *<input id="jc-date" required type="date" class="jobcard-input" /></label>
-              <label class="text-[11px] text-zinc-400">Unit reference number<input id="jc-unit-ref" maxlength="100" class="jobcard-input" /></label>
+              <label class="text-[11px] text-zinc-400">Job No.<input id="jc-unit-ref" maxlength="100" class="jobcard-input" /></label>
               <label class="text-[11px] text-zinc-400">Customer *<input id="jc-customer" required maxlength="200" class="jobcard-input" autocomplete="organization" /></label>
               <label class="text-[11px] text-zinc-400">Order No.<input id="jc-order-no" maxlength="100" class="jobcard-input" /></label>
               <label class="text-[11px] text-zinc-400">Site *<input id="jc-site" required maxlength="200" class="jobcard-input" /></label>
@@ -3021,7 +3021,7 @@
         .filter((name, index, names) => names.findIndex(item => item.toLowerCase() === name.toLowerCase()) === index);
       return {
         clientId: activeJobCardDraftId || newJobCardId(), company: 'SINABO', serviceScheduleNo: value('jc-schedule'), date: value('jc-date'),
-        unitRef: value('jc-unit-ref'), customer: value('jc-customer'), orderNo: value('jc-order-no'), site: value('jc-site'),
+        jobNo: value('jc-unit-ref'), customer: value('jc-customer'), orderNo: value('jc-order-no'), site: value('jc-site'),
         hourMetre: value('jc-hour-metre'), engineType: value('jc-engine-type'), alternatorType: value('jc-alternator-type'),
         checks, readings, runTests: collectTests(SINABO_RUN_TESTS, 'jc-run'), controlTests: collectTests(SINABO_CONTROL_TESTS, 'jc-control'),
         parts, personnel, travelTime: value('jc-travel-time'), timeOnSite: value('jc-time-on-site'), kilometres: value('jc-kilometres'), remarks: value('jc-remarks'),
@@ -3129,8 +3129,8 @@
       if (!draft?.data) return;
       activeJobCardDraftId = draft.clientId;
       const data = draft.data;
-      const map = { 'jc-schedule': 'serviceScheduleNo', 'jc-date': 'date', 'jc-unit-ref': 'unitRef', 'jc-customer': 'customer', 'jc-order-no': 'orderNo', 'jc-site': 'site', 'jc-hour-metre': 'hourMetre', 'jc-engine-type': 'engineType', 'jc-alternator-type': 'alternatorType', 'jc-travel-time': 'travelTime', 'jc-time-on-site': 'timeOnSite', 'jc-kilometres': 'kilometres', 'jc-remarks': 'remarks', 'jc-customer-rep': 'customerRepName' };
-      Object.entries(map).forEach(([id, key]) => { const el = document.getElementById(id); if (el) el.value = data[key] || ''; });
+      const map = { 'jc-schedule': 'serviceScheduleNo', 'jc-date': 'date', 'jc-unit-ref': 'jobNo', 'jc-customer': 'customer', 'jc-order-no': 'orderNo', 'jc-site': 'site', 'jc-hour-metre': 'hourMetre', 'jc-engine-type': 'engineType', 'jc-alternator-type': 'alternatorType', 'jc-travel-time': 'travelTime', 'jc-time-on-site': 'timeOnSite', 'jc-kilometres': 'kilometres', 'jc-remarks': 'remarks', 'jc-customer-rep': 'customerRepName' };
+      Object.entries(map).forEach(([id, key]) => { const el = document.getElementById(id); if (el) el.value = data[key] || (key === 'jobNo' ? data.unitRef : '') || ''; });
       (data.checks || []).forEach((row, i) => { const sel = document.getElementById(`jc-check-${i}`); const note = document.getElementById(`jc-check-note-${i}`); if (sel) sel.value = row.result || ''; if (note) note.value = row.notes || ''; });
       (data.readings || []).forEach((row, i) => { const el = document.getElementById(`jc-reading-${i}`); if (el) el.value = row.value || ''; });
       const restoreTests = (rows, prefix) => rows.forEach((row, i) => { const sel = document.getElementById(`${prefix}-result-${i}`); const note = document.getElementById(`${prefix}-note-${i}`); if (sel) sel.value = row.result || ''; if (note) note.value = row.notes || ''; });

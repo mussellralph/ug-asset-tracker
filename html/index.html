@@ -779,6 +779,24 @@
           </div>
           <div id="master-jobcard-personnel-list" class="space-y-2"><p class="text-xs text-zinc-500">Sign in as Master Admin to manage this roster.</p></div>
         </div>
+
+        <div id="master-audit-trail" class="hidden rounded-xl border border-zinc-800 bg-zinc-950/60 p-4 space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div><h3 class="text-sm font-bold text-white"><i class="fa-solid fa-clipboard-list text-amber-400 mr-1.5"></i>Audit Trail</h3><p class="text-[11px] text-zinc-400 mt-1">Search staff transactions and asset register changes from the server database.</p></div>
+            <span id="audit-trail-count" class="text-[11px] text-zinc-500">No results loaded</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 items-end">
+            <label class="text-[10px] uppercase tracking-wide text-zinc-400">User<select id="audit-user-filter" class="jobcard-input !mt-1 !py-2"><option value="">All users</option></select></label>
+            <label class="text-[10px] uppercase tracking-wide text-zinc-400">From<input id="audit-date-from" type="date" class="jobcard-input jobcard-date !mt-1 !py-2" /></label>
+            <label class="text-[10px] uppercase tracking-wide text-zinc-400">To<input id="audit-date-to" type="date" class="jobcard-input jobcard-date !mt-1 !py-2" /></label>
+            <label class="text-[10px] uppercase tracking-wide text-zinc-400">Action<select id="audit-action-filter" class="jobcard-input !mt-1 !py-2"><option value="">All actions</option><option value="SIGN OUT">Sign-out</option><option value="RETURN">Return</option><option value="EDIT">Edits</option><option value="DELETE">Deletions</option></select></label>
+            <label class="text-[10px] uppercase tracking-wide text-zinc-400">Asset<input id="audit-asset-filter" class="jobcard-input !mt-1 !py-2" placeholder="ID or name" /></label>
+            <label class="text-[10px] uppercase tracking-wide text-zinc-400 sm:col-span-2">Job / Site<input id="audit-job-filter" class="jobcard-input !mt-1 !py-2" placeholder="Job number or site" /></label>
+            <div class="sm:col-span-2 flex gap-2"><button type="button" onclick="loadAuditTrail(true)" class="flex-1 px-3 py-2 rounded-lg bg-[#C41E3A] text-white text-xs font-bold"><i class="fa-solid fa-filter mr-1"></i>Apply Filters</button><button type="button" onclick="resetAuditTrailFilters()" class="px-3 py-2 rounded-lg bg-zinc-800 text-zinc-200 text-xs font-semibold">Clear</button></div>
+          </div>
+          <div class="overflow-x-auto rounded-lg border border-zinc-800"><table class="w-full min-w-[850px] text-left text-xs"><thead class="bg-zinc-950 text-zinc-400 uppercase text-[10px]"><tr><th class="p-3">Timestamp</th><th class="p-3">User</th><th class="p-3">Action</th><th class="p-3">Asset</th><th class="p-3">Job / Site</th><th class="p-3">Condition</th></tr></thead><tbody id="audit-trail-table" class="divide-y divide-zinc-800 text-zinc-300"></tbody></table></div>
+          <button id="audit-trail-more" type="button" onclick="loadAuditTrail(false)" class="hidden w-full px-3 py-2 rounded-lg bg-zinc-800 text-zinc-200 text-xs font-semibold">Load more</button>
+        </div>
       </div>
     </section>
 
@@ -1664,6 +1682,8 @@
 
     // Always start locked so every user/device must sign in with their 4-digit PIN
     let currentUser = null;
+    let auditTrailOffset = 0;
+    const AUDIT_TRAIL_PAGE_SIZE = 100;
     sessionStorage.removeItem('ug_active_user_v4');
 
     function appendPinDigit(digit) {
@@ -3355,7 +3375,60 @@
         requestAnimationFrame(() => { initializeJobCardSignature('customer'); initializeJobCardSignature('serviceman'); });
         if (sessionToken) flushJobCardQueue(); else loadJobCardHistory();
       }
-      if (tab === 'master') { renderMasterControlTable(); loadJobCardPersonnel(); }
+      if (tab === 'master') {
+        renderMasterControlTable(); loadJobCardPersonnel();
+        const audit = document.getElementById('master-audit-trail');
+        const isMasterAdmin = currentUser?.role === 'Master Admin';
+        audit?.classList.toggle('hidden', !isMasterAdmin);
+        if (isMasterAdmin) { populateAuditTrailUsers(); loadAuditTrail(true); }
+      }
+    }
+
+    function populateAuditTrailUsers() {
+      const select = document.getElementById('audit-user-filter');
+      if (!select) return;
+      const selected = select.value;
+      const names = [...new Set([...(staffAccounts || []).map(staff => staff.name), currentUser?.name].filter(Boolean))].sort((a, b) => a.localeCompare(b));
+      select.innerHTML = '<option value="">All users</option>' + names.map(name => `<option value="${escapeJobCardHtml(name)}">${escapeJobCardHtml(name)}</option>`).join('');
+      select.value = names.includes(selected) ? selected : '';
+    }
+
+    function resetAuditTrailFilters() {
+      ['audit-user-filter','audit-date-from','audit-date-to','audit-action-filter','audit-asset-filter','audit-job-filter'].forEach(id => { const input = document.getElementById(id); if (input) input.value = ''; });
+      loadAuditTrail(true);
+    }
+
+    async function loadAuditTrail(reset = false) {
+      if (currentUser?.role !== 'Master Admin' || !sessionToken) return;
+      const table = document.getElementById('audit-trail-table');
+      const count = document.getElementById('audit-trail-count');
+      const more = document.getElementById('audit-trail-more');
+      if (reset) { auditTrailOffset = 0; table.innerHTML = '<tr><td colspan="6" class="p-4 text-zinc-500">Loading audit records…</td></tr>'; }
+      const value = id => document.getElementById(id)?.value?.trim() || null;
+      const result = await ugRpc('ug_get_audit_logs', {
+        p_token: sessionToken, p_user: value('audit-user-filter'), p_date_from: value('audit-date-from'), p_date_to: value('audit-date-to'),
+        p_action: value('audit-action-filter'), p_asset: value('audit-asset-filter'), p_job: value('audit-job-filter'),
+        p_limit: AUDIT_TRAIL_PAGE_SIZE, p_offset: auditTrailOffset
+      });
+      if (!result.ok || !Array.isArray(result.data)) {
+        if (reset) table.innerHTML = `<tr><td colspan="6" class="p-4 text-rose-300">${escapeJobCardHtml(result.error || 'Could not load audit records.')}</td></tr>`;
+        if (count) count.textContent = 'Load failed';
+        more?.classList.add('hidden');
+        return;
+      }
+      if (reset) table.innerHTML = '';
+      const rows = result.data.map(row => {
+        const date = row.timestamp || row.created_at;
+        const assetId = row.tool_id || row.asset_id || '';
+        const assetName = row.tool_name || row.asset_name || '';
+        const action = row.action || 'Unknown';
+        return `<tr><td class="p-3 whitespace-nowrap text-zinc-400">${escapeJobCardHtml(date ? new Date(date).toLocaleString() : row.time_str || '')}</td><td class="p-3">${escapeJobCardHtml(row.performed_by || row.tech || row.holder || 'Unknown')}</td><td class="p-3">${escapeJobCardHtml(action)}</td><td class="p-3"><span class="font-mono text-rose-300">${escapeJobCardHtml(assetId)}</span> ${escapeJobCardHtml(assetName)}</td><td class="p-3">${escapeJobCardHtml(row.job || row.job_ref || '')}</td><td class="p-3">${escapeJobCardHtml(row.condition || '')}</td></tr>`;
+      }).join('');
+      if (rows) table.insertAdjacentHTML('beforeend', rows);
+      if (reset && !rows) table.innerHTML = '<tr><td colspan="6" class="p-4 text-zinc-500">No records match these filters.</td></tr>';
+      auditTrailOffset += result.data.length;
+      if (count) count.textContent = `${auditTrailOffset} record${auditTrailOffset === 1 ? '' : 's'} loaded`;
+      more?.classList.toggle('hidden', result.data.length < AUDIT_TRAIL_PAGE_SIZE);
     }
 
     // SCANNER & SIGN-OUT / RETURN WORKFLOW

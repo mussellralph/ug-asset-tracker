@@ -291,6 +291,43 @@ BEGIN
   RETURN QUERY SELECT * FROM public.activity_logs ORDER BY id DESC LIMIT LEAST(GREATEST(p_limit, 1), 500);
 END $$;
 
+CREATE OR REPLACE FUNCTION public.ug_get_audit_logs(
+  p_token TEXT,
+  p_user TEXT DEFAULT NULL,
+  p_date_from DATE DEFAULT NULL,
+  p_date_to DATE DEFAULT NULL,
+  p_action TEXT DEFAULT NULL,
+  p_asset TEXT DEFAULT NULL,
+  p_job TEXT DEFAULT NULL,
+  p_limit INT DEFAULT 100,
+  p_offset INT DEFAULT 0
+)
+RETURNS SETOF public.activity_logs
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE acc public.staff_accounts;
+BEGIN
+  acc := public.ug_require_session(p_token);
+  IF acc.role IS DISTINCT FROM 'Master Admin' THEN
+    RAISE EXCEPTION 'UG_FORBIDDEN_AUDIT' USING ERRCODE = '42501';
+  END IF;
+  RETURN QUERY
+    SELECT l.* FROM public.activity_logs l
+     WHERE (NULLIF(BTRIM(p_user), '') IS NULL OR COALESCE(l.performed_by, l.tech, l.holder, '') ILIKE '%' || BTRIM(p_user) || '%')
+       AND (p_date_from IS NULL OR COALESCE(l.timestamp, l.created_at) >= (p_date_from::timestamp AT TIME ZONE 'Africa/Johannesburg'))
+       AND (p_date_to IS NULL OR COALESCE(l.timestamp, l.created_at) < ((p_date_to + 1)::timestamp AT TIME ZONE 'Africa/Johannesburg'))
+       AND (NULLIF(BTRIM(p_action), '') IS NULL OR CASE UPPER(BTRIM(p_action))
+         WHEN 'SIGN OUT' THEN UPPER(COALESCE(l.action, '')) IN ('SIGN OUT', 'SIGN-OUT', 'CHECK OUT', 'CHECK-OUT')
+         WHEN 'RETURN' THEN UPPER(COALESCE(l.action, '')) IN ('RETURN', 'SIGN IN', 'SIGN-IN', 'CHECK IN', 'CHECK-IN')
+         WHEN 'EDIT' THEN UPPER(COALESCE(l.action, '')) IN ('EDIT', 'UPDATE', 'ASSET EDIT')
+         WHEN 'DELETE' THEN UPPER(COALESCE(l.action, '')) IN ('DELETE', 'DELETION', 'ASSET DELETE')
+         ELSE UPPER(COALESCE(l.action, '')) = UPPER(BTRIM(p_action)) END)
+       AND (NULLIF(BTRIM(p_asset), '') IS NULL OR concat_ws(' ', l.tool_id, l.asset_id, l.tool_name, l.asset_name) ILIKE '%' || BTRIM(p_asset) || '%')
+       AND (NULLIF(BTRIM(p_job), '') IS NULL OR concat_ws(' ', l.job, l.job_ref) ILIKE '%' || BTRIM(p_job) || '%')
+     ORDER BY l.id DESC
+     LIMIT LEAST(GREATEST(COALESCE(p_limit, 100), 1), 200)
+     OFFSET GREATEST(COALESCE(p_offset, 0), 0);
+END $$;
+
 -- ---------- Signed-in: writes ----------
 CREATE OR REPLACE FUNCTION public.ug_upsert_tools(p_token TEXT, p_rows JSONB)
 RETURNS INT
@@ -315,6 +352,17 @@ BEGIN
     RAISE EXCEPTION 'UG_FORBIDDEN_RETURN' USING ERRCODE = '42501';
   END IF;
 
+  INSERT INTO public.activity_logs
+    (time_str, action, tool_id, asset_id, tool_name, asset_name, tech, holder, job, job_ref, condition, performed_by)
+  SELECT TO_CHAR(NOW(), 'HH24:MI'), 'EDIT', incoming.id, incoming.id, incoming.name, incoming.name,
+         acc.name, acc.name, incoming.job_ref, incoming.job_ref, incoming.condition, acc.name
+    FROM jsonb_populate_recordset(NULL::public.tools, p_rows) incoming
+    JOIN public.tools existing ON existing.id = incoming.id
+   WHERE incoming.id <> '__UG_STAFF_CONFIG__'
+     AND (existing.name, existing.category, existing.location, existing.notes, existing.condition_notes)
+         IS DISTINCT FROM
+         (incoming.name, incoming.category, incoming.location, incoming.notes, incoming.condition_notes);
+
   INSERT INTO public.tools AS t
     (id, name, category, status, condition, location, holder, current_holder, job_ref,
      checkout_date, checkout_time, expected_return, notes, condition_notes, updated_at)
@@ -336,8 +384,16 @@ END $$;
 CREATE OR REPLACE FUNCTION public.ug_delete_tool(p_token TEXT, p_id TEXT)
 RETURNS VOID
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE acc public.staff_accounts; existing public.tools;
 BEGIN
-  PERFORM public.ug_require_session(p_token, 'canEditRegister');
+  acc := public.ug_require_session(p_token, 'canEditRegister');
+  SELECT * INTO existing FROM public.tools WHERE id = p_id;
+  IF FOUND THEN
+    INSERT INTO public.activity_logs
+      (time_str, action, tool_id, asset_id, tool_name, asset_name, tech, holder, job, job_ref, condition, performed_by)
+    VALUES (TO_CHAR(NOW(), 'HH24:MI'), 'DELETE', existing.id, existing.id, existing.name, existing.name,
+            acc.name, acc.name, existing.job_ref, existing.job_ref, existing.condition, acc.name);
+  END IF;
   DELETE FROM public.tools WHERE id = p_id;
 END $$;
 
@@ -454,6 +510,7 @@ REVOKE ALL ON FUNCTION public.ug_require_session(TEXT, TEXT) FROM PUBLIC, anon, 
 REVOKE ALL ON FUNCTION
   public.ug_list_staff(), public.ug_bootstrap_staff(JSONB), public.ug_login(TEXT, TEXT), public.ug_logout(TEXT),
   public.ug_get_tools(TEXT), public.ug_get_staff(TEXT), public.ug_get_logs(TEXT, INT),
+  public.ug_get_audit_logs(TEXT, TEXT, DATE, DATE, TEXT, TEXT, TEXT, INT, INT),
   public.ug_upsert_tools(TEXT, JSONB), public.ug_delete_tool(TEXT, TEXT), public.ug_add_log(TEXT, JSONB),
   public.ug_upsert_staff(TEXT, JSONB), public.ug_delete_staff(TEXT, TEXT),
   public.ug_list_jobcard_personnel(TEXT), public.ug_add_jobcard_personnel(TEXT, TEXT),
@@ -462,6 +519,7 @@ FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION
   public.ug_list_staff(), public.ug_bootstrap_staff(JSONB), public.ug_login(TEXT, TEXT), public.ug_logout(TEXT),
   public.ug_get_tools(TEXT), public.ug_get_staff(TEXT), public.ug_get_logs(TEXT, INT),
+  public.ug_get_audit_logs(TEXT, TEXT, DATE, DATE, TEXT, TEXT, TEXT, INT, INT),
   public.ug_upsert_tools(TEXT, JSONB), public.ug_delete_tool(TEXT, TEXT), public.ug_add_log(TEXT, JSONB),
   public.ug_upsert_staff(TEXT, JSONB), public.ug_delete_staff(TEXT, TEXT),
   public.ug_list_jobcard_personnel(TEXT), public.ug_add_jobcard_personnel(TEXT, TEXT),

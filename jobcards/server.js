@@ -70,8 +70,14 @@ function createPdf(data, signer, signatures) {
 
     function heading(title) {
       if (doc.y > 730) doc.addPage();
-      doc.moveDown(0.55).font('Helvetica-Bold').fontSize(10).fillColor(red).text(title.toUpperCase(), { width });
-      doc.moveTo(doc.page.margins.left, doc.y + 3).lineTo(doc.page.width - doc.page.margins.right, doc.y + 3).strokeColor(red).lineWidth(0.7).stroke();
+      const left = doc.page.margins.left;
+      doc.x = left;
+      doc.moveDown(0.55).font('Helvetica-Bold').fontSize(10).fillColor(red);
+      doc.text(title.toUpperCase(), left, doc.y, { width, align: 'center' });
+      const ruleY = doc.y + 3;
+      doc.moveTo(left, ruleY).lineTo(doc.page.width - doc.page.margins.right, ruleY).strokeColor(red).lineWidth(0.7).stroke();
+      doc.y = ruleY + 3;
+      doc.x = left;
       doc.moveDown(0.35).fillColor(ink);
     }
 
@@ -80,9 +86,9 @@ function createPdf(data, signer, signatures) {
       const x = options.x ?? doc.page.margins.left;
       const y = doc.y;
       const previousY = doc.y;
-      doc.font('Helvetica').fontSize(7).fillColor(muted).text(label, x, y, { width: colWidth });
+      doc.font('Helvetica').fontSize(7).fillColor(muted).text(label, x, y, { width: colWidth, align: 'center' });
       const labelHeight = doc.heightOfString(label, { width: colWidth, font: 'Helvetica', fontSize: 7 });
-      doc.font('Helvetica-Bold').fontSize(9).fillColor(ink).text(clean(value, 1000) || '—', x, y + labelHeight + 2, { width: colWidth });
+      doc.font('Helvetica-Bold').fontSize(9).fillColor(ink).text(clean(value, 1000) || '—', x, y + labelHeight + 2, { width: colWidth, align: 'center' });
       const height = Math.max(labelHeight + 14, doc.heightOfString(clean(value, 1000) || '—', { width: colWidth, font: 'Helvetica-Bold', fontSize: 9 }) + labelHeight + 5);
       doc.y = previousY;
       return height;
@@ -107,7 +113,7 @@ function createPdf(data, signer, signatures) {
       const top = doc.y;
       doc.font('Helvetica-Bold').fontSize(7).fillColor(muted);
       let x = doc.page.margins.left;
-      cols.forEach((fraction, i) => { doc.text(['Item', 'Result / Value', 'Notes'][i] || '', x + 4, top, { width: widths[i] - 8 }); x += widths[i]; });
+      cols.forEach((fraction, i) => { doc.text(['Item', 'Result / Value', 'Notes'][i] || '', x + 4, top, { width: widths[i] - 8, align: 'center' }); x += widths[i]; });
       doc.moveTo(doc.page.margins.left, top + 12).lineTo(doc.page.margins.left + width, top + 12).strokeColor('#c8cdd4').stroke();
       let y = top + 15;
       rows.forEach(row => {
@@ -122,9 +128,17 @@ function createPdf(data, signer, signatures) {
       doc.y = y + 2;
     }
 
-    doc.fillColor(red).font('Helvetica-Bold').fontSize(19).text('SINABO GENERATORS', { continued: true });
-    doc.fillColor(ink).fontSize(12).text('  SERVICE SCHEDULE', { align: 'right' });
-    doc.moveDown(0.4);
+    const logoWidth = 190;
+    const logoHeight = logoWidth * 120 / 326;
+    const logoX = (doc.page.width - logoWidth) / 2;
+    const logoY = doc.page.margins.top;
+    doc.image(path.join(__dirname, 'assets', 'sinabo-logo.png'), logoX, logoY, { width: logoWidth });
+    doc.x = doc.page.margins.left;
+    doc.y = logoY + logoHeight + 7;
+    doc.fillColor(ink).font('Helvetica-Bold').fontSize(12)
+      .text('SERVICE SCHEDULE', doc.page.margins.left, doc.y, { width, align: 'center' });
+    doc.x = doc.page.margins.left;
+    doc.moveDown(0.5);
     grid([
       ['Service Schedule No.', data.serviceScheduleNo], ['Date', data.date],
       ['Unit reference number', data.unitRef], ['Customer', data.customer],

@@ -4,7 +4,7 @@
 **Date:** 6 November 2026
 **Starting point:** `asset_and_tool_management_tracker.html` (the Netlify + Supabase version), included in the export as `original/`
 
-**Latest update:** 9 November 2026. Added a signed SINABO job-card workflow with local drafts, an offline upload queue and a status log. Successful submissions are rendered as PDFs and saved under `/mnt/SmartHome/Jobcards/SINABO`. The SINABO form now records on-site personnel in the PDF and keeps a shared server-side personnel roster; Master Admin can remove stale names. UES and USS remain listed until their manual forms are supplied. Fleet mileage entries now reflow as cards on phones, the mobile logo is centered, and Go-Live is limited to the Master Admin role.
+**Latest update:** 9 November 2026. Added a signed SINABO job-card workflow with local drafts, an offline upload queue and a status log. Successful submissions are rendered as PDFs and saved under `/mnt/SmartHome/Jobcards/SINABO`. The SINABO form now records on-site personnel in the PDF and keeps a shared server-side personnel roster; Master Admin can remove stale names. Generated PDFs use the SINABO logo and consistently centered field labels and section titles. UES and USS remain listed until their manual forms are supplied. Fleet mileage entries now reflow as cards on phones, the mobile logo is centered, and Go-Live is limited to the Master Admin role.
 
 The app looks and works the same for staff: same screens, scanner, check-out/return, fleet mileage and Master Control. What changed is **where it runs**, **how sign-in is secured**, and **how updates are shipped**.
 

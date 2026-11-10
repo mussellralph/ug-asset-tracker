@@ -2399,11 +2399,20 @@
       };
     }
 
+    function normalizeToolStatus(value, holder = null) {
+      const rawStatus = String(value || '').trim();
+      const statusKey = rawStatus.toLowerCase().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ');
+      const availableStatuses = ['in stores', 'in store', 'available', 'available in stores', 'in stock', 'in yard', 'in yard (available)'];
+      const repairStatuses = ['in repair', 'repair', 'damaged / in repair'];
+      if (statusKey === 'checked out' || (Boolean(holder) && !availableStatuses.includes(statusKey) && !repairStatuses.includes(statusKey))) return 'Checked Out';
+      if (repairStatuses.includes(statusKey)) return 'In Repair';
+      if (!rawStatus || availableStatuses.includes(statusKey)) return 'In Stores';
+      return rawStatus;
+    }
+
     function mapServerRowToTool(row) {
       const holderVal = row.current_holder || row.holder || null;
-      const rawStatus = String(row.status || '').trim();
-      const isCheckedOut = rawStatus.toLowerCase() === 'checked out' || Boolean(holderVal && rawStatus.toLowerCase() !== 'in stores');
-      const normalizedStatus = isCheckedOut ? 'Checked Out' : (rawStatus || 'In Stores');
+      const normalizedStatus = normalizeToolStatus(row.status, holderVal);
       const category = row.category || "Hand Tools";
       const rawNotes = row.condition_notes || row.notes || "";
       const meta = unpackToolVehicleMeta(rawNotes, category);
@@ -3783,7 +3792,7 @@
     // DASHBOARD, REGISTER & LOG RENDERERS
     function updateMetricsAndBadges() {
       const total = tools.length;
-      const inStore = tools.filter(t => t.status === 'In Stores').length;
+      const inStore = tools.filter(t => normalizeToolStatus(t.status, t.currentHolder) === 'In Stores').length;
       const checkedOutTools = tools.filter(t => t.status === 'Checked Out');
       const now = Date.now();
       const overdueTools = checkedOutTools.filter(t => t.expectedReturn && new Date(t.expectedReturn).getTime() < now);

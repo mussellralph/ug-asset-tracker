@@ -250,9 +250,6 @@
         <button id="header-master-btn" onclick="switchTab('master')" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-[#C41E3A]/20 hover:bg-[#C41E3A]/30 text-[#ff4d6d] border border-[#C41E3A]/40 transition">
           <i class="fa-solid fa-user-shield"></i> <span class="hidden md:inline">Master Control</span>
         </button>
-        <button id="header-new-asset-btn" onclick="openAddToolModal()" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700 transition">
-          <i class="fa-solid fa-plus text-[#C41E3A]"></i> New Asset
-        </button>
         <button onclick="lockAndSwitchUser()" title="Switch Technician / Lock Portal" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-zinc-900 hover:bg-rose-950/60 text-zinc-200 hover:text-rose-300 border border-zinc-700 transition">
           <i class="fa-solid fa-right-from-bracket text-[#C41E3A]"></i> <span id="mobile-user-short" class="sm:hidden font-semibold">Switch</span><span class="hidden sm:inline">Switch User</span>
         </button>
@@ -2103,7 +2100,6 @@
       document.getElementById('tab-btn-golive').classList.toggle('hidden', !showGoLive);
       document.getElementById('mob-nav-golive').classList.toggle('hidden', !showGoLive);
 
-      document.getElementById('header-new-asset-btn').classList.toggle('hidden', !showEdit);
       document.getElementById('btn-add-asset-main').classList.toggle('hidden', !showEdit);
       document.getElementById('btn-import-csv').classList.toggle('hidden', !showEdit);
 

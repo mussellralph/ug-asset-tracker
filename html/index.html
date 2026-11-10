@@ -3792,8 +3792,10 @@
     // DASHBOARD, REGISTER & LOG RENDERERS
     function updateMetricsAndBadges() {
       const total = tools.length;
-      const inStore = tools.filter(t => normalizeToolStatus(t.status, t.currentHolder) === 'In Stores').length;
-      const checkedOutTools = tools.filter(t => t.status === 'Checked Out');
+      const classifiedTools = tools.map(tool => ({ ...tool, dashboardStatus: normalizeToolStatus(tool.status, tool.currentHolder) }));
+      const checkedOutTools = classifiedTools.filter(t => t.dashboardStatus === 'Checked Out');
+      const repairTools = classifiedTools.filter(t => t.dashboardStatus === 'In Repair');
+      const inStore = Math.max(0, total - checkedOutTools.length - repairTools.length);
       const now = Date.now();
       const overdueTools = checkedOutTools.filter(t => t.expectedReturn && new Date(t.expectedReturn).getTime() < now);
 

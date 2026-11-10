@@ -3926,6 +3926,63 @@
       }).join('');
     }
 
+    async function changeToolAvailabilityStatus(assetId, requestedStatus) {
+      const perms = getEffectivePermissions();
+      if (!perms.canEditRegister) {
+        showToast('Only Managers or Master Admins can change asset status.', 'error');
+        renderInventoryTable();
+        return;
+      }
+      if (!['In Stores', 'In Repair'].includes(requestedStatus)) {
+        renderInventoryTable();
+        return;
+      }
+
+      const index = tools.findIndex(tool => tool.id.toUpperCase() === String(assetId || '').toUpperCase());
+      if (index < 0) return;
+      const previous = tools[index];
+      const previousStatus = normalizeToolStatus(previous.status, previous.currentHolder);
+      if (previousStatus === 'Checked Out') {
+        showToast('Return this asset before changing its availability status.', 'error');
+        renderInventoryTable();
+        return;
+      }
+      if (previousStatus === requestedStatus) return;
+
+      const updated = {
+        ...previous,
+        status: requestedStatus,
+        currentHolder: null,
+        jobRef: null,
+        checkoutTime: null,
+        expectedReturn: null,
+        tripType: null,
+        updatedAt: new Date().toISOString()
+      };
+      tools[index] = updated;
+      localToolLockTimestamps[updated.id] = Date.now();
+
+      const logEntry = {
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        action: 'EDIT',
+        toolId: updated.id,
+        toolName: updated.name,
+        tech: currentUser?.name || 'Manager',
+        job: `Availability changed: ${previousStatus} → ${requestedStatus}`,
+        condition: updated.condition || 'Good'
+      };
+      activityLogs.unshift(logEntry);
+      persistState();
+      updateMetricsAndBadges();
+      renderActivityLogs();
+      renderInventoryTable();
+      renderCheckoutsList();
+      renderFleetAndMileageView();
+      await Promise.all([upsertToolsToServer([updated]), pushActivityLogToServer(logEntry)]);
+      showToast(`${updated.id} status changed to ${requestedStatus === 'In Stores' ? 'Available in Stores' : 'Damaged / In Repair'}`);
+    }
+    window.changeToolAvailabilityStatus = changeToolAvailabilityStatus;
+
     function renderInventoryTable() {
       const tbody = document.getElementById('inventory-table-body');
       const mobileList = document.getElementById('inventory-mobile-list');
@@ -3943,12 +4000,14 @@
           t.name.toLowerCase().includes(search) ||
           (t.currentHolder || '').toLowerCase().includes(search);
         const matchCat = cat === 'all' || t.category === cat;
-        const matchStatus = status === 'all' || t.status === status;
+        const matchStatus = status === 'all' || normalizeToolStatus(t.status, t.currentHolder) === status;
         return matchSearch && matchCat && matchStatus;
       });
 
       if (tbody) tbody.innerHTML = filtered.map(t => {
-        const isOut = t.status === 'Checked Out';
+        const currentStatus = normalizeToolStatus(t.status, t.currentHolder);
+        const isOut = currentStatus === 'Checked Out';
+        const isRepair = currentStatus === 'In Repair';
         const isVehicle = t.category === 'Fleet / Vehicle';
         const safeId = t.id.replace(/'/g, "\\'");
         return `
@@ -3965,7 +4024,8 @@
               ${isOut
                 ? `<span class="px-2 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30 font-bold text-[10px]">OUT: ${t.currentHolder}</span>
                    <div class="text-[10px] text-zinc-400 mt-0.5">${t.jobRef || ''}</div>`
-                : `<span class="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-bold text-[10px]">IN STORES (${t.location || 'Main'})</span>`
+                : `<span class="px-2 py-0.5 rounded ${isRepair ? 'bg-rose-500/15 text-rose-300 border-rose-500/30' : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'} border font-bold text-[10px]">${isRepair ? 'DAMAGED / IN REPAIR' : `IN STORES (${t.location || 'Main'})`}</span>
+                   ${canEdit ? `<select aria-label="Availability status for ${t.id}" onchange="changeToolAvailabilityStatus('${safeId}', this.value)" class="mt-2 block max-w-full bg-zinc-950 border border-zinc-700 rounded-md px-2 py-1.5 text-[11px] text-zinc-200 focus:outline-none focus:border-[#C41E3A]"><option value="In Stores" ${currentStatus === 'In Stores' ? 'selected' : ''}>Available in Stores</option><option value="In Repair" ${isRepair ? 'selected' : ''}>Damaged / In Repair</option></select>` : ''}`
               }
             </td>
             <td class="py-3 px-4 font-semibold text-emerald-400">${t.condition}</td>
@@ -3987,9 +4047,10 @@
       }).join('');
 
       if (mobileList) mobileList.innerHTML = filtered.length ? filtered.map(t => {
-        const isOut = t.status === 'Checked Out';
+        const currentStatus = normalizeToolStatus(t.status, t.currentHolder);
+        const isOut = currentStatus === 'Checked Out';
         const isVehicle = t.category === 'Fleet / Vehicle';
-        const isRepair = t.status === 'In Repair';
+        const isRepair = currentStatus === 'In Repair';
         const safeId = t.id.replace(/'/g, "\\'");
         const statusLabel = isOut ? 'CHECKED OUT' : isRepair ? 'IN REPAIR' : 'IN STORES';
         const statusClass = isOut ? 'bg-amber-500/15 text-amber-400 border-amber-500/30' : isRepair ? 'bg-rose-500/15 text-rose-300 border-rose-500/30' : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30';
@@ -4000,7 +4061,10 @@
                 <div class="text-[10px] uppercase tracking-wide text-zinc-500">Asset ID</div>
                 <div class="font-mono font-bold text-[#ff4d6d] text-sm break-all">${t.id}</div>
               </div>
-              <span class="shrink-0 max-w-[60%] px-2 py-1 rounded border text-[10px] font-bold text-center whitespace-normal break-words ${statusClass}">${statusLabel}</span>
+              <div class="shrink-0 flex flex-col items-end gap-2">
+                <span class="max-w-[60%] px-2 py-1 rounded border text-[10px] font-bold text-center whitespace-normal break-words ${statusClass}">${statusLabel}</span>
+                ${!isOut && canEdit ? `<select aria-label="Availability status for ${t.id}" onchange="changeToolAvailabilityStatus('${safeId}', this.value)" class="max-w-[190px] bg-zinc-950 border border-zinc-700 rounded-md px-2 py-1.5 text-[11px] text-zinc-200 focus:outline-none focus:border-[#C41E3A]"><option value="In Stores" ${currentStatus === 'In Stores' ? 'selected' : ''}>Available in Stores</option><option value="In Repair" ${isRepair ? 'selected' : ''}>Damaged / In Repair</option></select>` : ''}
+              </div>
             </div>
             <div class="min-w-0 border-t border-zinc-800 pt-2.5">
               <div class="text-[10px] uppercase tracking-wide text-zinc-500">Tool / Vehicle</div>

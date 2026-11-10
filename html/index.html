@@ -815,8 +815,8 @@
           <button type="button" onclick="selectJobCardCompany('SINABO')" id="jobcard-company-sinabo" class="text-left rounded-xl border border-amber-400 bg-amber-400/10 p-3 transition">
             <span class="block text-sm font-extrabold text-white">SINABO</span><span class="text-[11px] text-zinc-400">Generators · Available</span>
           </button>
-          <button type="button" disabled class="text-left rounded-xl border border-zinc-800 bg-zinc-950/40 p-3 opacity-60 cursor-not-allowed">
-            <span class="block text-sm font-extrabold text-zinc-300">UES</span><span class="text-[11px] text-zinc-500">Ultimate Electrical Solutions · Template coming soon</span>
+          <button type="button" onclick="selectJobCardCompany('UES')" id="jobcard-company-ues" class="text-left rounded-xl border border-zinc-800 bg-zinc-950/40 p-3 transition">
+            <span class="block text-sm font-extrabold text-zinc-300">UES</span><span class="text-[11px] text-zinc-400">Ultimate Electrical Solutions · Available</span>
           </button>
           <button type="button" onclick="selectJobCardCompany('USS')" id="jobcard-company-uss" class="text-left rounded-xl border border-zinc-800 bg-zinc-950/40 p-3 transition">
             <span class="block text-sm font-extrabold text-zinc-300">USS</span><span class="text-[11px] text-zinc-400">Ultimate Solar Systems · Available</span>
@@ -3063,20 +3063,23 @@
     }
 
     function selectJobCardCompany(company) {
-      const selected = ['SINABO', 'USS'].includes(company) ? company : 'SINABO';
+      const selected = ['SINABO', 'UES', 'USS'].includes(company) ? company : 'SINABO';
       document.getElementById('jobcard-company').value = selected;
-      const uss = selected === 'USS';
-      ['jc-schedule', 'jc-date', 'jc-customer', 'jc-site'].forEach(id => { const input = document.getElementById(id); if (input) input.required = !uss; });
-      ['uss-job-no', 'uss-date', 'uss-customer', 'uss-site'].forEach(id => { const input = document.getElementById(id); if (input) input.required = uss; });
+      const utility = selected !== 'SINABO';
+      ['jc-schedule', 'jc-date', 'jc-customer', 'jc-site'].forEach(id => { const input = document.getElementById(id); if (input) input.required = !utility; });
+      ['uss-job-no', 'uss-date', 'uss-customer', 'uss-site'].forEach(id => { const input = document.getElementById(id); if (input) input.required = utility; });
       const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
-      if (uss && !document.getElementById('uss-date')?.value) document.getElementById('uss-date').value = today;
-      document.getElementById('uss-jobcard-fields')?.classList.toggle('hidden', !uss);
-      document.getElementById('uss-travel-details')?.classList.toggle('hidden', !uss);
-      ['sinabo-generator-details','sinabo-generator-checks-section','sinabo-generator-readings-section','sinabo-personnel','sinabo-run-tests','sinabo-control-tests','sinabo-parts'].forEach(id => document.getElementById(id)?.closest('.rounded-xl')?.classList.toggle('hidden', uss));
-      ['sinabo','uss'].forEach(key => {
+      if (utility && !document.getElementById('uss-date')?.value) document.getElementById('uss-date').value = today;
+      document.getElementById('uss-jobcard-fields')?.classList.toggle('hidden', !utility);
+      document.getElementById('uss-travel-details')?.classList.toggle('hidden', !utility);
+      ['sinabo-generator-details','sinabo-generator-checks-section','sinabo-generator-readings-section','sinabo-personnel','sinabo-run-tests','sinabo-control-tests','sinabo-parts'].forEach(id => document.getElementById(id)?.closest('.rounded-xl')?.classList.toggle('hidden', utility));
+      ['sinabo','ues','uss'].forEach(key => {
         const button = document.getElementById(`jobcard-company-${key}`);
         button?.classList.toggle('border-amber-400', key.toUpperCase() === selected);
         button?.classList.toggle('bg-amber-400/10', key.toUpperCase() === selected);
+        button?.classList.toggle('border-zinc-800', key.toUpperCase() !== selected);
+        button?.classList.toggle('text-white', key.toUpperCase() === selected);
+        button?.classList.toggle('text-zinc-300', key.toUpperCase() !== selected);
       });
       document.querySelector('#sinabo-jobcard-form button[type="submit"]')?.classList.toggle('bg-amber-400', true);
     }
@@ -3085,8 +3088,8 @@
       const value = id => (document.getElementById(id)?.value || '').trim();
       const company = document.getElementById('jobcard-company')?.value || 'SINABO';
       const servicemanName = currentUser?.name || value('jc-serviceman');
-      if (company === 'USS') return {
-        clientId: activeJobCardDraftId || newJobCardId(), company: 'USS', serviceScheduleNo: value('uss-job-no'), date: value('uss-date'),
+      if (company === 'USS' || company === 'UES') return {
+        clientId: activeJobCardDraftId || newJobCardId(), company, serviceScheduleNo: value('uss-job-no'), date: value('uss-date'),
         jobNo: value('uss-job-no'), customer: value('uss-customer'), quoteNo: value('uss-quote-no'), orderNo: value('uss-order-no'), requiredDate: value('uss-required-date'), site: value('uss-site'),
         personnel: [...document.querySelectorAll('#uss-personnel [data-jobcard-personnel-select]')].map(select => select.value.trim()).filter(name => name && name !== '__add_new__'), odometerOpening: value('uss-odo-open'), odometerClosing: value('uss-odo-close'), kilometres: value('jc-kilometres'),
         travelTime: value('jc-travel-time'), timeOnSite: value('jc-time-on-site'), timeStart: value('uss-time-start'), timeFinish: value('uss-time-finish'), totalHours: value('uss-hours'), tasks: value('uss-tasks'), worksComplete: value('uss-complete'),
@@ -3194,7 +3197,7 @@
         return false;
       }
       const data = collectJobCardData(true);
-      if (!data.serviceScheduleNo) { showToast(data.company === 'USS' ? 'Enter the Job No. before saving this draft.' : 'Enter the service schedule number before saving a draft.', 'error'); document.getElementById(data.company === 'USS' ? 'uss-job-no' : 'jc-schedule')?.focus(); return false; }
+      if (!data.serviceScheduleNo) { const utility = data.company === 'USS' || data.company === 'UES'; showToast(utility ? 'Enter the Job No. before saving this draft.' : 'Enter the service schedule number before saving a draft.', 'error'); document.getElementById(utility ? 'uss-job-no' : 'jc-schedule')?.focus(); return false; }
       activeJobCardDraftId = data.clientId;
       try {
         await storeLocalJobCard({ clientId: data.clientId, company: data.company, serviceScheduleNo: data.serviceScheduleNo, customer: data.customer, status: 'draft', data });
@@ -3212,7 +3215,7 @@
       activeJobCardDraftId = draft.clientId;
       const data = draft.data;
       selectJobCardCompany(data.company || 'SINABO');
-      if (data.company === 'USS') {
+      if (data.company === 'USS' || data.company === 'UES') {
         const map = { 'uss-date':'date','uss-job-no':'jobNo','uss-customer':'customer','uss-quote-no':'quoteNo','uss-order-no':'orderNo','uss-required-date':'requiredDate','uss-site':'site','uss-odo-open':'odometerOpening','uss-odo-close':'odometerClosing','jc-travel-time':'travelTime','jc-time-on-site':'timeOnSite','jc-kilometres':'kilometres','jc-remarks':'remarks','uss-time-start':'timeStart','uss-time-finish':'timeFinish','uss-hours':'totalHours','uss-tasks':'tasks','uss-complete':'worksComplete','uss-progress':'worksInProgress','uss-additional':'additionalWork','uss-requested-by':'requestedBy','uss-request-date':'requestDate' };
         Object.entries(map).forEach(([id,key]) => { const el=document.getElementById(id); if(el) el.value=data[key] || ''; });
         const ussPersonnel = document.getElementById('uss-personnel'); ussPersonnel.innerHTML = ''; (data.personnel?.length ? data.personnel : ['']).forEach(name => addJobCardPersonnelRow(name, 'uss-personnel'));
@@ -3225,7 +3228,7 @@
       const restoreTests = (rows, prefix) => rows.forEach((row, i) => { const sel = document.getElementById(`${prefix}-result-${i}`); const note = document.getElementById(`${prefix}-note-${i}`); if (sel) sel.value = row.result || ''; if (note) note.value = row.notes || ''; });
       restoreTests(data.runTests || [], 'jc-run'); restoreTests(data.controlTests || [], 'jc-control');
       const parts = document.getElementById('sinabo-parts'); parts.innerHTML = ''; (data.parts?.length ? data.parts : [{}]).forEach(row => addJobCardPartRow(row.item, row.quantity, row.notes));
-      if (data.company !== 'USS') { const personnel = document.getElementById('sinabo-personnel'); personnel.innerHTML = ''; (data.personnel?.length ? data.personnel : ['']).forEach(name => addJobCardPersonnelRow(name)); }
+      if (data.company !== 'USS' && data.company !== 'UES') { const personnel = document.getElementById('sinabo-personnel'); personnel.innerHTML = ''; (data.personnel?.length ? data.personnel : ['']).forEach(name => addJobCardPersonnelRow(name)); }
       document.getElementById('jc-serviceman').value = currentUser?.name || data.servicemanName || '';
       initializeJobCardSignature('customer'); initializeJobCardSignature('serviceman');
       clearJobCardSignature('customer'); clearJobCardSignature('serviceman');
@@ -3277,7 +3280,7 @@
       const button = document.getElementById('jobcard-submit-button');
       const data = collectJobCardData(true);
       activeJobCardDraftId = data.clientId;
-      if (data.company === 'USS' && (!data.serviceScheduleNo || !data.date || !data.customer || !data.site)) {
+      if ((data.company === 'USS' || data.company === 'UES') && (!data.serviceScheduleNo || !data.date || !data.customer || !data.site)) {
         showToast('Complete Job No., date, customer and site before submitting.', 'error');
         return;
       }

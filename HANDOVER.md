@@ -12,7 +12,7 @@ This project is maintained by the GitHub account `mussellralph`. The repository 
 | Job card image | `ghcr.io/mussellralph/ug-asset-tracker-jobcards` |
 | Live TrueNAS app | `10.0.0.11`, ports `30090` (app) and `30091` (Adminer, LAN only) |
 | Database data | `/mnt/SmartHome/Apps/ug-asset-tracker/pgdata` |
-| Signed job-card PDFs | `/mnt/SmartHome/Jobcards/{SINABO,UES,USS}` (SINABO form enabled first) |
+| Signed job-card PDFs | `/mnt/SmartHome/Jobcards/{SINABO,UES,USS}` (all three company forms enabled) |
 | Public hostname | `ultimate-group.app`, Cloudflare Tunnel `ug-assets` to `http://10.0.0.11:30090` |
 | Test install | `10.0.0.5`, ports `30080` and `30081`, separate database |
 

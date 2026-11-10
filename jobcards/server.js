@@ -133,11 +133,9 @@ function createPdf(data, signer, signatures) {
     const logoY = doc.page.margins.top;
     let logoHeight;
     if (data.company === 'UES') {
-      doc.fillColor('#55585c').font('Helvetica-Bold').fontSize(31)
-        .text('UES', doc.page.margins.left, logoY, { width, align: 'center' });
-      doc.fillColor(muted).font('Helvetica').fontSize(8)
-        .text('ULTIMATE ELECTRICAL SOLUTIONS PTY LTD', doc.page.margins.left, logoY + 34, { width, align: 'center' });
-      logoHeight = 46;
+      const logoWidth = 190;
+      logoHeight = logoWidth * 111 / 240;
+      doc.image(path.join(__dirname, 'assets', 'ues-logo.jpg'), (doc.page.width - logoWidth) / 2, logoY, { width: logoWidth });
     } else {
       const logoWidth = isUss ? 220 : 190;
       logoHeight = isUss ? logoWidth * 1032 / 2831 : logoWidth * 120 / 326;

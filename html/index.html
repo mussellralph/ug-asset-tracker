@@ -14,6 +14,8 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <!-- QR Code generation library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <!-- ZIP archive support for downloading all QR labels at once -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <!-- jsQR Optical QR Code Reader for live camera decoding -->
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script>
@@ -496,6 +498,12 @@
             </button>
             <button id="btn-export-csv" onclick="exportInventoryCsv()" class="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 font-semibold rounded-lg text-xs flex items-center gap-1.5 transition">
               <i class="fa-solid fa-file-csv text-amber-400"></i> Export Excel CSV
+            </button>
+            <button id="btn-print-all-qr" onclick="printAllQrLabels()" class="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 font-semibold rounded-lg text-xs flex items-center gap-1.5 transition">
+              <i class="fa-solid fa-print text-sky-400"></i> Print All QR Labels
+            </button>
+            <button id="btn-download-all-qr" onclick="downloadAllQrLabelsZip()" class="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 font-semibold rounded-lg text-xs flex items-center gap-1.5 transition">
+              <i class="fa-solid fa-file-arrow-down text-emerald-400"></i> Download QR ZIP
             </button>
             <button id="btn-add-asset-main" onclick="openAddToolModal()" class="px-4 py-2 bg-[#C41E3A] hover:bg-[#a61730] text-white font-bold rounded-lg text-xs flex items-center gap-1.5 shadow-lg transition">
               <i class="fa-solid fa-plus"></i> Add Asset
@@ -4569,6 +4577,185 @@
 
     function closeQrModal() {
       document.getElementById('qr-modal').classList.add('hidden');
+    }
+
+    function createAssetQrLabelDataUrl(tool) {
+      return new Promise((resolve, reject) => {
+        if (typeof QRCode === 'undefined') {
+          reject(new Error('QR code generator is unavailable. Check the internet connection and try again.'));
+          return;
+        }
+        const holder = document.createElement('div');
+        holder.style.position = 'fixed';
+        holder.style.left = '-10000px';
+        holder.style.top = '0';
+        document.body.appendChild(holder);
+        try {
+          new QRCode(holder, {
+            text: String(tool.id),
+            width: 280,
+            height: 280,
+            colorDark: '#000000',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.H
+          });
+        } catch (error) {
+          holder.remove();
+          reject(error);
+          return;
+        }
+
+        const finish = () => {
+          const qrCanvas = holder.querySelector('canvas');
+          const qrImage = holder.querySelector('img');
+          const source = qrCanvas || (qrImage && qrImage.complete ? qrImage : null);
+          if (!source) {
+            holder.remove();
+            reject(new Error(`Could not generate a QR code for ${tool.id}.`));
+            return;
+          }
+          try {
+            const label = document.createElement('canvas');
+            label.width = 720;
+            label.height = 380;
+            const context = label.getContext('2d');
+            context.fillStyle = '#ffffff';
+            context.fillRect(0, 0, label.width, label.height);
+            context.strokeStyle = '#222222';
+            context.lineWidth = 4;
+            context.strokeRect(2, 2, label.width - 4, label.height - 4);
+            context.drawImage(source, 28, 48, 280, 280);
+            context.fillStyle = '#111111';
+            context.textAlign = 'left';
+            context.font = 'bold 42px Arial, sans-serif';
+            context.fillText(String(tool.id), 340, 130, 350);
+            context.font = '24px Arial, sans-serif';
+            const words = String(tool.name || 'Asset').split(/\s+/);
+            let line = '';
+            let y = 185;
+            for (const word of words) {
+              const candidate = line ? `${line} ${word}` : word;
+              if (context.measureText(candidate).width > 340 && line) {
+                context.fillText(line, 340, y, 350);
+                line = word;
+                y += 34;
+              } else {
+                line = candidate;
+              }
+            }
+            if (line && y <= 320) context.fillText(line, 340, y, 350);
+            context.fillStyle = '#C41E3A';
+            context.font = 'bold 16px Arial, sans-serif';
+            context.fillText('PROPERTY OF ULTIMATE GROUP', 340, 345, 350);
+            const dataUrl = label.toDataURL('image/png');
+            holder.remove();
+            resolve(dataUrl);
+          } catch (error) {
+            holder.remove();
+            reject(error);
+          }
+        };
+
+        requestAnimationFrame(() => {
+          if (holder.querySelector('canvas')) {
+            finish();
+            return;
+          }
+          const image = holder.querySelector('img');
+          if (!image) {
+            finish();
+            return;
+          }
+          if (image.complete) finish();
+          else {
+            image.onload = finish;
+            image.onerror = () => {
+              holder.remove();
+              reject(new Error(`Could not generate a QR code for ${tool.id}.`));
+            };
+          }
+        });
+      });
+    }
+
+    function escapeQrPrintText(value) {
+      return String(value ?? '').replace(/[&<>"']/g, character => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      })[character]);
+    }
+
+    async function printAllQrLabels() {
+      if (!Array.isArray(tools) || tools.length === 0) {
+        showToast('There are no assets to print QR labels for.', 'error');
+        return;
+      }
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) {
+        showToast('Allow pop-ups for this app to print all QR labels.', 'error');
+        return;
+      }
+      try {
+        const labels = await Promise.all(tools.map(async tool => {
+          const image = await createAssetQrLabelDataUrl(tool);
+          return `<article class="label"><img src="${image}" alt="QR label for ${escapeQrPrintText(tool.id)}"><div><strong>${escapeQrPrintText(tool.id)}</strong><span>${escapeQrPrintText(tool.name || 'Asset')}</span></div></article>`;
+        }));
+        printWindow.document.open();
+        printWindow.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Asset QR Labels</title><style>
+          @page { size: A4; margin: 8mm; }
+          * { box-sizing: border-box; }
+          body { margin: 0; color: #111; font-family: Arial, sans-serif; }
+          h1 { font-size: 16pt; margin: 0 0 5mm; }
+          .labels { display: grid; grid-template-columns: repeat(2, 1fr); gap: 5mm; }
+          .label { width: 70mm; height: 37mm; break-inside: avoid; page-break-inside: avoid; }
+          .label img { display: block; width: 70mm; height: 37mm; object-fit: contain; }
+          @media screen { body { padding: 12px; } .labels { max-width: 190mm; } }
+        </style></head><body><h1>Ultimate Group Asset QR Labels</h1><main class="labels">${labels.join('')}</main><script>window.addEventListener('load', () => setTimeout(() => { window.focus(); window.print(); }, 300));<\/script></body></html>`);
+        printWindow.document.close();
+        showToast(`Prepared ${tools.length} QR labels for printing.`);
+      } catch (error) {
+        printWindow.close();
+        console.error('Bulk QR print failed:', error);
+        showToast(error.message || 'Could not prepare the QR labels for printing.', 'error');
+      }
+    }
+
+    async function downloadAllQrLabelsZip() {
+      if (!Array.isArray(tools) || tools.length === 0) {
+        showToast('There are no assets to download QR labels for.', 'error');
+        return;
+      }
+      if (typeof JSZip === 'undefined') {
+        showToast('ZIP download is unavailable. Check the internet connection and try again.', 'error');
+        return;
+      }
+      const button = document.getElementById('btn-download-all-qr');
+      const oldLabel = button.innerHTML;
+      button.disabled = true;
+      button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Preparing ZIP…';
+      try {
+        const zip = new JSZip();
+        for (const tool of tools) {
+          const dataUrl = await createAssetQrLabelDataUrl(tool);
+          const filename = `${String(tool.id || 'asset').replace(/[^a-z0-9_-]/gi, '_')}.png`;
+          zip.file(filename, dataUrl.split(',')[1], { base64: true });
+        }
+        const archive = await zip.generateAsync({ type: 'blob' });
+        const url = URL.createObjectURL(archive);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'ultimate-group-asset-qr-labels.zip';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        showToast(`Downloaded ${tools.length} QR labels in a ZIP file.`);
+      } catch (error) {
+        console.error('Bulk QR download failed:', error);
+        showToast(error.message || 'Could not create the QR label download.', 'error');
+      } finally {
+        button.disabled = false;
+        button.innerHTML = oldLabel;
+      }
     }
 
     function exportInventoryCsv() {

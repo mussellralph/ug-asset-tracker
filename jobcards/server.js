@@ -49,154 +49,161 @@ function signatureBuffer(value) {
 
 function createPdf(data, signer, signatures) {
   return new Promise((resolve, reject) => {
-    const isUtility = data.company === 'USS' || data.company === 'UES';
-    const isUss = data.company === 'USS';
-    const doc = new PDFDocument({ size: 'A4', margin: 38, bufferPages: true, info: { Title: `${data.company || 'SINABO'} Job Card`, Author: signer } });
+    const utility = data.company === 'USS' || data.company === 'UES';
+    const doc = new PDFDocument({ size: 'A4', margin: 16, info: { Title: (data.company || 'SINABO') + ' Job Card', Author: signer } });
     const chunks = [];
     doc.on('data', chunk => chunks.push(chunk));
     doc.on('error', reject);
     doc.on('end', () => resolve(Buffer.concat(chunks)));
-
-    const ink = '#20252d';
-    const muted = '#68717d';
-    const red = '#a71932';
-    const width = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+    const left = 20, width = doc.page.width - 40;
+    const ink = '#20252d', muted = '#68717d', red = '#a71932', rule = '#aeb5bf';
+    const people = Array.isArray(data.personnel) ? [...new Set(data.personnel.map(n => clean(n, 120)).filter(Boolean))].slice(0, 20) : [];
     const checks = Array.isArray(data.checks) ? data.checks.slice(0, 16) : [];
     const readings = Array.isArray(data.readings) ? data.readings.slice(0, 20) : [];
-    const runTests = Array.isArray(data.runTests) ? data.runTests.slice(0, 12) : [];
-    const controlTests = Array.isArray(data.controlTests) ? data.controlTests.slice(0, 8) : [];
+    const tests = [...(Array.isArray(data.runTests) ? data.runTests.slice(0, 12) : []), ...(Array.isArray(data.controlTests) ? data.controlTests.slice(0, 8) : [])];
     const parts = Array.isArray(data.parts) ? data.parts.slice(0, 20) : [];
-    const personnel = Array.isArray(data.personnel)
-      ? [...new Set(data.personnel.map(name => clean(name, 120)).filter(Boolean))].slice(0, 20)
-      : [];
 
-    function heading(title) {
-      if (doc.y > 730) doc.addPage();
-      const left = doc.page.margins.left;
-      doc.x = left;
-      doc.moveDown(0.55).font('Helvetica-Bold').fontSize(10).fillColor(red);
-      doc.text(title.toUpperCase(), left, doc.y, { width, align: 'center' });
-      const ruleY = doc.y + 3;
-      doc.moveTo(left, ruleY).lineTo(doc.page.width - doc.page.margins.right, ruleY).strokeColor(red).lineWidth(0.7).stroke();
-      doc.y = ruleY + 3;
-      doc.x = left;
-      doc.moveDown(0.35).fillColor(ink);
+    function fit(value, w, font = 'Helvetica', size = 6, max = 1000) {
+      let s = clean(value, max).replace(/\s+/g, ' ');
+      if (!s) return '-';
+      doc.font(font).fontSize(size);
+      if (doc.widthOfString(s) <= w) return s;
+      while (s.length > 1 && doc.widthOfString(s + '...') > w) s = s.slice(0, -1);
+      return s.trimEnd() + '...';
     }
-
-    function field(label, value, options = {}) {
-      const colWidth = options.width || width;
-      const x = options.x ?? doc.page.margins.left;
-      const y = doc.y;
-      const previousY = doc.y;
-      doc.font('Helvetica').fontSize(7).fillColor(muted).text(label, x, y, { width: colWidth, align: 'center' });
-      const labelHeight = doc.heightOfString(label, { width: colWidth, font: 'Helvetica', fontSize: 7 });
-      doc.font('Helvetica-Bold').fontSize(9).fillColor(ink).text(clean(value, 1000) || '—', x, y + labelHeight + 2, { width: colWidth, align: 'center' });
-      const height = Math.max(labelHeight + 14, doc.heightOfString(clean(value, 1000) || '—', { width: colWidth, font: 'Helvetica-Bold', fontSize: 9 }) + labelHeight + 5);
-      doc.y = previousY;
-      return height;
+    function wrap(value, w, size, maxLines, max = 3000) {
+      const words = clean(value, max).replace(/\s+/g, ' ').split(' ').filter(Boolean);
+      if (!words.length) return ['-'];
+      doc.font('Helvetica').fontSize(size);
+      const out = [];
+      let line = '', clipped = false;
+      for (const word of words) {
+        const candidate = line ? line + ' ' + word : word;
+        if (doc.widthOfString(candidate) <= w) { line = candidate; continue; }
+        if (line) out.push(line);
+        line = word;
+        if (out.length >= maxLines) { clipped = true; break; }
+      }
+      if (line && out.length < maxLines) out.push(line);
+      if (clipped || (out.length === maxLines && words.join(' ').length > out.join(' ').length)) out[out.length - 1] = fit(out[out.length - 1] + '...', w, 'Helvetica', size, max);
+      return out.length ? out : ['-'];
     }
-
-    function grid(items, columns = 2) {
-      const gap = 16;
-      const colWidth = (width - gap * (columns - 1)) / columns;
-      let maxHeight = 0;
-      items.forEach((item, index) => {
-        const col = index % columns;
-        if (col === 0 && index > 0) doc.y += maxHeight + 8;
-        const h = field(item[0], item[1], { x: doc.page.margins.left + col * (colWidth + gap), width: colWidth });
-        maxHeight = col === 0 ? h : Math.max(maxHeight, h);
+    function heading(text, y, x = left, w = width) {
+      doc.font('Helvetica-Bold').fontSize(7.2).fillColor(red).text(text.toUpperCase(), x, y, { width: w, lineBreak: false });
+      doc.moveTo(x, y + 9).lineTo(x + w, y + 9).strokeColor(rule).lineWidth(0.55).stroke();
+      return y + 12;
+    }
+    function field(label, value, x, y, w, h, maxLines = 1) {
+      doc.rect(x, y, w, h).fillAndStroke('#f2f3f5', rule);
+      doc.font('Helvetica').fontSize(5.8).fillColor(muted).text(fit(label, w - 8, 'Helvetica', 5.8, 120), x + 4, y + 2, { width: w - 8, lineBreak: false });
+      wrap(value, w - 8, 7.2, maxLines, 1000).forEach((s, i) => doc.font('Helvetica-Bold').fontSize(7.2).fillColor(ink)
+        .text(s, x + 4, y + 9 + i * 8.2, { width: w - 8, lineBreak: false }));
+    }
+    function grid(items, cols, y, h = 21, lines = 1) {
+      const gap = 4, cw = (width - gap * (cols - 1)) / cols;
+      items.forEach(([label, value], i) => field(label, value, left + (i % cols) * (cw + gap), y + Math.floor(i / cols) * h, cw, h, lines));
+      return y + Math.ceil(items.length / cols) * h;
+    }
+    function block(label, value, x, y, w, h, count = 3, size = 6.1, limit = 3000) {
+      doc.rect(x, y, w, h).fillAndStroke('#fff', rule);
+      doc.font('Helvetica-Bold').fontSize(5.8).fillColor(muted).text(fit(label, w - 8, 'Helvetica-Bold', 5.8, 120), x + 4, y + 3, { width: w - 8, lineBreak: false });
+      wrap(value, w - 8, size, count, limit).forEach((s, i) => doc.font('Helvetica').fontSize(size).fillColor(ink)
+        .text(s, x + 4, y + 11 + i * (size + 1), { width: w - 8, lineBreak: false }));
+    }
+    function stack(label, rows, x, y, w, h) {
+      doc.rect(x, y, w, h).fillAndStroke('#fff', rule);
+      doc.font('Helvetica-Bold').fontSize(7.2).fillColor(red).text(label.toUpperCase(), x + 4, y + 3, { width: w - 8, lineBreak: false });
+      const rh = (h - 14) / rows.length;
+      rows.forEach(([name, value], i) => {
+        const yy = y + 13 + i * rh, lw = w * 0.38;
+        doc.font('Helvetica-Bold').fontSize(5.5).fillColor(muted).text(fit(name, lw - 6, 'Helvetica-Bold', 5.2, 80), x + 4, yy, { width: lw - 6, lineBreak: false });
+        doc.font('Helvetica').fontSize(5.8).fillColor(ink).text(fit(value, w - lw - 10, 'Helvetica', 5.8, 200), x + lw, yy, { width: w - lw - 6, lineBreak: false });
+        if (i < rows.length - 1) doc.moveTo(x + 4, yy + rh - 1).lineTo(x + w - 4, yy + rh - 1).strokeColor('#ddd').lineWidth(0.3).stroke();
       });
-      if (items.length) doc.y += maxHeight + 8;
     }
-
-    function listRows(rows, cols) {
-      if (doc.y > 735) doc.addPage();
-      const widths = cols.map(v => width * v);
-      const top = doc.y;
-      doc.font('Helvetica-Bold').fontSize(7).fillColor(muted);
-      let x = doc.page.margins.left;
-      cols.forEach((fraction, i) => { doc.text(['Item', 'Result / Value', 'Notes'][i] || '', x + 4, top, { width: widths[i] - 8, align: 'center' }); x += widths[i]; });
-      doc.moveTo(doc.page.margins.left, top + 12).lineTo(doc.page.margins.left + width, top + 12).strokeColor('#c8cdd4').stroke();
-      let y = top + 15;
-      rows.forEach(row => {
-        const values = row.map(v => clean(v, 300) || '—');
-        const rowHeight = Math.max(18, ...values.map((value, i) => doc.heightOfString(value, { width: widths[i] - 8, font: 'Helvetica', fontSize: 7 })));
-        if (y + rowHeight > doc.page.height - doc.page.margins.bottom) { doc.addPage(); y = doc.page.margins.top; }
-        let cx = doc.page.margins.left;
-        doc.font('Helvetica').fontSize(7).fillColor(ink);
-        values.forEach((value, i) => { doc.text(value, cx + 4, y, { width: widths[i] - 8 }); cx += widths[i]; });
-        y += rowHeight + 2;
+    function table(label, headers, rows, x, y, w, ratios) {
+      doc.font('Helvetica-Bold').fontSize(6).fillColor(red).text(label.toUpperCase(), x, y, { width: w, lineBreak: false });
+      const hy = y + 9, widths = ratios.map(v => w * v);
+      let xx = x;
+      headers.forEach((s, i) => {
+        doc.rect(xx, hy, widths[i], 8).fillAndStroke('#e0e3e7', rule);
+        doc.font('Helvetica-Bold').fontSize(5.5).fillColor(muted).text(fit(s, widths[i] - 4, 'Helvetica-Bold', 5.5, 60), xx + 2, hy + 1.5, { width: widths[i] - 4, lineBreak: false });
+        xx += widths[i];
       });
-      doc.y = y + 2;
+      rows.forEach((row, ri) => {
+        const yy = hy + 8 + ri * 9.7;
+        let cx = x;
+        row.forEach((v, ci) => {
+          const font = ci === 0 ? 'Helvetica-Bold' : 'Helvetica';
+          doc.rect(cx, yy, widths[ci], 9.7).fillAndStroke(ri % 2 ? '#fff' : '#f8f8f9', '#d3d7dc');
+          doc.font(font).fontSize(6.0).fillColor(ink).text(fit(v, widths[ci] - 4, font, 6.0, 240), cx + 2, yy + 1.5, { width: widths[ci] - 4, lineBreak: false });
+          cx += widths[ci];
+        });
+      });
+      return hy + 8 + rows.length * 9.7;
+    }
+    function signBlock(y) {
+      y = heading(utility ? 'Customer and technician signatures' : 'Acknowledgement and signatures', y);
+      const gap = 10, cw = (width - gap) / 2;
+      field('Customer representative name (print)', data.customerRepName, left, y, cw, 19);
+      field('Serviceman name (print)', signer, left + cw + gap, y, cw, 19);
+      const sy = y + 22, sh = 60;
+      doc.image(signatures.customer, left, sy, { fit: [cw, sh], align: 'center', valign: 'center' });
+      doc.image(signatures.serviceman, left + cw + gap, sy, { fit: [cw, sh], align: 'center', valign: 'center' });
+      doc.moveTo(left, sy + sh).lineTo(left + cw, sy + sh).strokeColor(rule).stroke();
+      doc.moveTo(left + cw + gap, sy + sh).lineTo(left + width, sy + sh).strokeColor(rule).stroke();
+      doc.font('Helvetica').fontSize(5.5).fillColor(muted).text('Customer representative signature', left, sy + sh + 2, { width: cw, align: 'center', lineBreak: false });
+      doc.text('Technician / serviceman signature', left + cw + gap, sy + sh + 2, { width: cw, align: 'center', lineBreak: false });
+      return sy + sh + 11;
     }
 
-    const logoY = doc.page.margins.top;
-    let logoHeight;
-    if (data.company === 'UES') {
-      const logoWidth = 190;
-      logoHeight = logoWidth * 111 / 240;
-      doc.image(path.join(__dirname, 'assets', 'ues-logo.jpg'), (doc.page.width - logoWidth) / 2, logoY, { width: logoWidth });
+    const logo = data.company === 'UES' ? ['ues-logo.jpg', 180, 111 / 240] : data.company === 'USS' ? ['uss-logo.png', 190, 1032 / 2831] : ['sinabo-logo.png', 150, 120 / 326];
+    const logoH = logo[1] * logo[2], logoY = 18;
+    doc.image(path.join(__dirname, 'assets', logo[0]), (doc.page.width - logo[1]) / 2, logoY, { width: logo[1], height: logoH });
+    let y = logoY + logoH + 3;
+    doc.font('Helvetica-Bold').fontSize(9).fillColor(ink).text((utility ? 'JOB CARD NO. ' : 'SERVICE SCHEDULE ') + clean(data.serviceScheduleNo, 50), left, y, { width, align: 'center', lineBreak: false });
+    y += 14;
+
+    if (utility) {
+      y = grid([['Date', data.date], ['Job No.', data.jobNo], ['Customer', data.customer], ['Quote No.', data.quoteNo], ['Order No.', data.orderNo], ['Required Date', data.requiredDate], ['Site', data.site]], 3, y, 28) + 4;
+      y = heading('Personnel, odometer and time on site', y);
+      const gap = 5, cw = (width - gap * 2) / 3;
+      block('Personnel', people.join(', ') || 'None recorded', left, y, cw, 108, 8, 6.5, 1500);
+      stack('Odometer', [['Opening', data.odometerOpening], ['Closing', data.odometerClosing], ['Total kilometres', data.kilometres]], left + cw + gap, y, cw, 108);
+      stack('Time on site', [['Start', data.timeStart], ['Finish', data.timeFinish], ['Total hours', data.totalHours]], left + (cw + gap) * 2, y, cw, 108);
+      y += 112;
+      y = heading('Job description and works', y);
+      const tg = 5, tw = (width - tg * 2) / 3;
+      block('Tasks', data.tasks, left, y, tw, 115, 8, 6.6, 3000);
+      block('Works complete', data.worksComplete, left + tw + tg, y, tw, 115, 8, 6.6, 1500);
+      block('Works in progress', data.worksInProgress, left + (tw + tg) * 2, y, tw, 115, 8, 6.6, 1500);
+      y += 119;
+      y = heading('Additional work / equipment', y);
+      y = grid([['Additional work / equipment', data.additionalWork], ['Requested by', data.requestedBy], ['Request date', data.requestDate], ['Billing', data.billing], ['Travel time', data.travelTime], ['Time on site', data.timeOnSite]], 3, y, 36, 2) + 4;
+      y = heading('Remarks', y);
+      block('Remarks', data.remarks, left, y, width, 82, 8, 6.4, 2000);
+      y += 86;
     } else {
-      const logoWidth = isUss ? 220 : 190;
-      logoHeight = isUss ? logoWidth * 1032 / 2831 : logoWidth * 120 / 326;
-      const logoX = (doc.page.width - logoWidth) / 2;
-      doc.image(path.join(__dirname, 'assets', isUss ? 'uss-logo.png' : 'sinabo-logo.png'), logoX, logoY, { width: logoWidth });
+      y = grid([['Service Schedule No.', data.serviceScheduleNo], ['Date', data.date], ['Job No.', data.jobNo || data.unitRef], ['Customer', data.customer], ['Order number', data.orderNo], ['Site', data.site], ['Hour metre', data.hourMetre], ['Engine type', data.engineType], ['Alternator type', data.alternatorType]], 3, y, 28) + 4;
+      y = heading('Personnel on site', y);
+      block('Personnel', people.join(', ') || 'None recorded', left, y, width, 28, 2, 6, 1500);
+      y += 32;
+      const gap = 10, tw = (width - gap) / 2;
+      const checkRows = checks.map(r => [r.label, r.result, r.notes]);
+      const readingRows = readings.map(r => [r.label, r.unit ? (r.value || '') + ' ' + r.unit : r.value, r.notes]);
+      const pair = (a, b, at) => Math.max(table(a.title, a.headers, a.rows, left, at, tw, a.ratios), table(b.title, b.headers, b.rows, left + tw + gap, at, tw, b.ratios));
+      y = pair({ title: 'Generator checks', headers: ['Check', 'Result', 'Notes'], rows: checkRows, ratios: [0.43, 0.21, 0.36] },
+        { title: 'Alternator and generator readings', headers: ['Reading', 'Value', 'Notes'], rows: readingRows, ratios: [0.48, 0.2, 0.32] }, y) + 5;
+      const testRows = tests.map(r => [r.label, r.unit ? (r.result || '') + ' ' + r.unit : r.result, r.notes]);
+      y = pair({ title: 'Run engine and control panel tests', headers: ['Test', 'Result', 'Notes'], rows: testRows, ratios: [0.5, 0.2, 0.3] },
+        { title: 'Parts / consumables supplied', headers: ['Item', 'Qty', 'Notes'], rows: parts.map(r => [r.item, r.quantity, r.notes]), ratios: [0.52, 0.16, 0.32] }, y) + 5;
+      y = grid([['Travel time', data.travelTime], ['Time on site', data.timeOnSite], ['Kilometres', data.kilometres], ['Remarks', data.remarks]], 4, y, 22) + 4;
     }
-    doc.x = doc.page.margins.left;
-    doc.y = logoY + logoHeight + 7;
-    doc.fillColor(ink).font('Helvetica-Bold').fontSize(12)
-      .text(isUtility ? `JOB NO. ${clean(data.serviceScheduleNo, 40)}` : 'SERVICE SCHEDULE', doc.page.margins.left, doc.y, { width, align: 'center' });
-    doc.x = doc.page.margins.left;
-    doc.moveDown(0.5);
-    if (isUtility) {
-      grid([['Date', data.date], ['Job No.', data.jobNo], ['Customer', data.customer], ['Quote No.', data.quoteNo], ['Order No.', data.orderNo], ['Required Date', data.requiredDate], ['Site', data.site]], 2);
-      heading('Personnel, Odometer and Time on Site');
-      grid([['Personnel', Array.isArray(data.personnel) ? data.personnel.join(', ') : data.personnel], ['Odometer Opening', data.odometerOpening], ['Odometer Closing', data.odometerClosing], ['Travel Time', data.travelTime], ['Time on Site', data.timeOnSite], ['Total Kilometres', data.kilometres], ['Start', data.timeStart], ['Finish', data.timeFinish], ['Total Hours', data.totalHours]], 3);
-      heading('Job Description and Works');
-      grid([['Tasks', data.tasks], ['Works Complete', data.worksComplete], ['Works In Progress', data.worksInProgress], ['Additional Work / Equipment', data.additionalWork], ['Requested By', data.requestedBy], ['Request Date', data.requestDate], ['Remarks', data.remarks], ['Billing', data.billing]], 1);
-    } else {
-    grid([
-      ['Service Schedule No.', data.serviceScheduleNo], ['Date', data.date],
-      ['Job No.', data.jobNo || data.unitRef], ['Customer', data.customer],
-      ['Order number', data.orderNo], ['Site', data.site],
-      ['Hour metre', data.hourMetre], ['Engine type', data.engineType],
-      ['Alternator type', data.alternatorType]
-    ]);
-
-    heading('Personnel on site');
-    doc.font('Helvetica').fontSize(9).fillColor(ink)
-      .text(personnel.length ? personnel.map((name, index) => `${index + 1}. ${name}`).join('\n') : 'None recorded', { width });
-    doc.moveDown(0.5);
-
-    heading('Checks - mark each item normal or abnormal');
-    listRows(checks.map(row => [row.label, row.result, row.notes]), [0.44, 0.20, 0.36]);
-
-    heading('Alternator and generator readings');
-    listRows(readings.map(row => [row.label, row.value, row.notes]), [0.48, 0.20, 0.32]);
-
-    heading('Run engine and control panel tests');
-    listRows([...runTests, ...controlTests].map(row => [row.label, row.unit ? `${row.result || '—'} ${row.unit}` : row.result, row.notes]), [0.50, 0.18, 0.32]);
-
-    heading('Parts / consumables supplied');
-    listRows(parts.map(row => [row.item, row.quantity, row.notes]), [0.58, 0.16, 0.26]);
-    grid([['Travel time', data.travelTime], ['Time on site', data.timeOnSite], ['Kilometres', data.kilometres], ['Remarks', data.remarks]], 2);
-
-    if (doc.y > 625) doc.addPage();
-    }
-    heading(isUtility ? 'Customer and Technician Signatures' : 'Acknowledgement and signatures');
-    grid([['Customer representative name (print)', data.customerRepName], ['Serviceman name (print)', signer]], 2);
-    const sigY = doc.y + 4;
-    const sigWidth = (width - 18) / 2;
-    doc.image(signatures.customer, doc.page.margins.left, sigY, { fit: [sigWidth, 72], align: 'center', valign: 'center' });
-    doc.image(signatures.serviceman, doc.page.margins.left + sigWidth + 18, sigY, { fit: [sigWidth, 72], align: 'center', valign: 'center' });
-    doc.moveTo(doc.page.margins.left, sigY + 78).lineTo(doc.page.margins.left + sigWidth, sigY + 78).strokeColor('#aeb5bf').stroke();
-    doc.moveTo(doc.page.margins.left + sigWidth + 18, sigY + 78).lineTo(doc.page.margins.left + width, sigY + 78).strokeColor('#aeb5bf').stroke();
-    doc.font('Helvetica').fontSize(8).fillColor(muted).text('Customer representative signature', doc.page.margins.left, sigY + 82, { width: sigWidth, align: 'center' });
-    doc.text('Serviceman signature', doc.page.margins.left + sigWidth + 18, sigY + 82, { width: sigWidth, align: 'center' });
+    y = signBlock(y + 1);
+    if (y < doc.page.height - 25) doc.font('Helvetica-Bold').fontSize(6.2).fillColor(muted).text('Thank you for your business.', left, y + 3, { width, align: 'center', lineBreak: false });
     doc.end();
   });
 }
-
 async function handleSubmit(req, res) {
   const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '').trim();
   if (!token || token.length > 256) return send(res, 401, { error: 'Please sign in before submitting a job card.' });
@@ -307,3 +314,4 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(3000, '0.0.0.0', () => console.log('Job card service listening on port 3000'));
 process.on('SIGTERM', async () => { server.close(); await pool.end(); });
+

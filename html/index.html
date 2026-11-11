@@ -1191,7 +1191,8 @@
             </label>
           </div>
           <div>
-            <input type="text" id="tool-condition-notes" placeholder="Inspection notes (e.g., carry case latch intact, cord checked)..." class="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-[#C41E3A]" />
+            <label for="tool-condition-notes" class="block text-[11px] font-semibold text-zinc-400 mb-1">Comment on condition (optional)</label>
+            <textarea id="tool-condition-notes" rows="2" placeholder="Add a comment about the condition..." class="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-[#C41E3A] resize-y"></textarea>
           </div>
 
           <label class="flex items-start gap-2 pt-2 border-t border-zinc-800/80 cursor-pointer select-none">
@@ -3516,7 +3517,9 @@
 
       document.getElementById('modal-tool-name').innerText = tool.name;
       document.getElementById('modal-tool-id').innerText = tool.id;
-      document.getElementById('tool-condition-notes').value = tool.conditionNotes || '';
+      const conditionNotes = String(tool.conditionNotes || '').trim();
+      const isDefaultFleetNote = isVehicle && conditionNotes.toLowerCase() === 'registered fleet vehicle';
+      document.getElementById('tool-condition-notes').value = isDefaultFleetNote ? '' : conditionNotes;
       document.getElementById('condition-accept-check').checked = false;
 
       // Configure Vehicle Odometer inputs if asset is a Fleet Vehicle
@@ -4543,7 +4546,7 @@
         jobRef: null,
         checkoutTime: null,
         expectedReturn: null,
-        conditionNotes: isVehicle ? "Registered fleet vehicle" : "Newly registered asset",
+        conditionNotes: isVehicle ? "" : "Newly registered asset",
         currentOdometer: isVehicle ? (isNaN(initialOdo) ? 0 : initialOdo) : null,
         regNumber: regNum
       };

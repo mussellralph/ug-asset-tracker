@@ -160,6 +160,12 @@ function createPdf(data, signer, signatures) {
     const logo = data.company === 'UES' ? ['ues-logo.jpg', 180, 111 / 240] : data.company === 'USS' ? ['uss-logo.png', 190, 1032 / 2831] : ['sinabo-logo.png', 150, 120 / 326];
     const logoH = logo[1] * logo[2], logoY = 18;
     doc.image(path.join(__dirname, 'assets', logo[0]), (doc.page.width - logo[1]) / 2, logoY, { width: logo[1], height: logoH });
+    if (!utility && clean(data.serviceType)) {
+      const serviceTypeWidth = 124;
+      const serviceTypeHeight = 22;
+      field('Service type', data.serviceType, left + width - serviceTypeWidth,
+        logoY + (logoH - serviceTypeHeight) / 2, serviceTypeWidth, serviceTypeHeight);
+    }
     let y = logoY + logoH + 3;
     doc.font('Helvetica-Bold').fontSize(9).fillColor(ink).text((utility ? 'JOB CARD NO. ' : 'SERVICE SCHEDULE ') + clean(data.serviceScheduleNo, 50), left, y, { width, align: 'center', lineBreak: false });
     y += 14;

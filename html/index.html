@@ -859,7 +859,7 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <label class="text-[11px] text-zinc-400">Service Schedule No. *<input id="jc-schedule" required maxlength="40" class="jobcard-input" autocomplete="off" /></label>
               <label class="text-[11px] text-zinc-400">Date *<input id="jc-date" required type="date" onclick="openJobCardDatePicker(this)" class="jobcard-input jobcard-date" /></label>
-              <label class="text-[11px] text-zinc-400">Job No.<input id="jc-unit-ref" maxlength="100" class="jobcard-input" /></label>
+              <label class="text-[11px] text-zinc-400">Job No. *<input id="jc-unit-ref" required maxlength="100" class="jobcard-input" /></label>
               <label class="text-[11px] text-zinc-400">Customer *<input id="jc-customer" required maxlength="200" class="jobcard-input" autocomplete="organization" /></label>
               <label class="text-[11px] text-zinc-400">Order No.<input id="jc-order-no" maxlength="100" class="jobcard-input" /></label>
               <label class="text-[11px] text-zinc-400">Site *<input id="jc-site" required maxlength="200" class="jobcard-input" /></label>
@@ -3080,7 +3080,7 @@
       const selected = ['SINABO', 'UES', 'USS'].includes(company) ? company : 'SINABO';
       document.getElementById('jobcard-company').value = selected;
       const utility = selected !== 'SINABO';
-      ['jc-schedule', 'jc-date', 'jc-customer', 'jc-site'].forEach(id => { const input = document.getElementById(id); if (input) input.required = !utility; });
+      ['jc-schedule', 'jc-date', 'jc-unit-ref', 'jc-customer', 'jc-site'].forEach(id => { const input = document.getElementById(id); if (input) input.required = !utility; });
       ['uss-job-no', 'uss-date', 'uss-customer', 'uss-site'].forEach(id => { const input = document.getElementById(id); if (input) input.required = utility; });
       const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
       if (utility && !document.getElementById('uss-date')?.value) document.getElementById('uss-date').value = today;
@@ -3296,6 +3296,11 @@
       activeJobCardDraftId = data.clientId;
       if ((data.company === 'USS' || data.company === 'UES') && (!data.serviceScheduleNo || !data.date || !data.customer || !data.site)) {
         showToast('Complete Job No., date, customer and site before submitting.', 'error');
+        return;
+      }
+      if (data.company === 'SINABO' && !data.jobNo) {
+        showToast('Enter the Job No. before submitting.', 'error');
+        document.getElementById('jc-unit-ref')?.focus();
         return;
       }
       if (!data.customerSignature || !data.servicemanSignature) {

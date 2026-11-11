@@ -60,7 +60,11 @@ function createPdf(data, signer, signatures) {
     const people = Array.isArray(data.personnel) ? [...new Set(data.personnel.map(n => clean(n, 120)).filter(Boolean))].slice(0, 20) : [];
     const checks = Array.isArray(data.checks) ? data.checks.slice(0, 16) : [];
     const readings = Array.isArray(data.readings) ? data.readings.slice(0, 20) : [];
-    const tests = [...(Array.isArray(data.runTests) ? data.runTests.slice(0, 12) : []), ...(Array.isArray(data.controlTests) ? data.controlTests.slice(0, 8) : [])];
+    const runTests = Array.isArray(data.runTests)
+      ? data.runTests.slice(0, 12).filter(row => row.label !== 'Check speed cut out relay')
+      : [];
+    const controlTests = Array.isArray(data.controlTests) ? data.controlTests.slice(0, 8) : [];
+    const tests = [...runTests, ...controlTests];
     const parts = Array.isArray(data.parts) ? data.parts.slice(0, 20) : [];
 
     function fit(value, w, font = 'Helvetica', size = 6, max = 1000) {

@@ -190,7 +190,11 @@ function createPdf(data, signer, signatures) {
       block('Remarks', data.remarks, left, y, width, 82, 8, 6.4, 2000);
       y += 86;
     } else {
-      y = grid([['Service Schedule No.', data.serviceScheduleNo], ['Date', data.date], ['Job No.', data.jobNo || data.unitRef], ['Customer', data.customer], ['Order number', data.orderNo], ['Site', data.site], ['Hour metre', data.hourMetre], ['Engine type', data.engineType], ['Alternator type', data.alternatorType]], 3, y, 28) + 4;
+      y = grid([
+        ['Job No.', data.jobNo || data.unitRef], ['Date', data.date], ['Service Schedule No.', data.serviceScheduleNo],
+        ['Customer', data.customer], ['Order number', data.orderNo], ['Site', data.site],
+        ['Hour metre', data.hourMetre], ['Engine type', data.engineType], ['Alternator type', data.alternatorType]
+      ], 3, y, 24) + 4;
       y = heading('Personnel on site', y);
       block('Personnel', people.join(', ') || 'None recorded', left, y, width, 28, 2, 6, 1500);
       y += 32;
@@ -203,7 +207,9 @@ function createPdf(data, signer, signatures) {
       const testRows = tests.map(r => [r.label, r.unit ? (r.result || '') + ' ' + r.unit : r.result, r.notes]);
       y = pair({ title: 'Run engine and control panel tests', headers: ['Test', 'Result', 'Notes'], rows: testRows, ratios: [0.5, 0.2, 0.3] },
         { title: 'Parts / consumables supplied', headers: ['Item', 'Qty', 'Notes'], rows: parts.map(r => [r.item, r.quantity, r.notes]), ratios: [0.52, 0.16, 0.32] }, y) + 5;
-      y = grid([['Travel time', data.travelTime], ['Time on site', data.timeOnSite], ['Kilometres', data.kilometres], ['Remarks', data.remarks]], 4, y, 22) + 4;
+      y = grid([['Travel time', data.travelTime], ['Time on site', data.timeOnSite], ['Kilometres', data.kilometres]], 3, y, 22) + 4;
+      block('Remarks', data.remarks, left, y, width, 34, 3, 6.4, 2000);
+      y += 36;
     }
     y = signBlock(y + 1);
     if (y < doc.page.height - 25) doc.font('Helvetica-Bold').fontSize(6.2).fillColor(muted).text('Thank you for your business.', left, y + 3, { width, align: 'center', lineBreak: false });

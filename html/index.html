@@ -2811,8 +2811,22 @@
         </div>`).join('');
 
       const readings = document.getElementById('sinabo-readings');
-      if (readings) readings.innerHTML = SINABO_READING_ITEMS.map(([label, unit], i) => `
-        <label class="text-[11px] text-zinc-400">${escapeJobCardHtml(label)} (${escapeJobCardHtml(unit)})<input id="jc-reading-${i}" inputmode="decimal" maxlength="60" class="jobcard-input" /></label>`).join('');
+      if (readings) readings.innerHTML = SINABO_READING_ITEMS.map(([label, unit], i) => {
+        const caption = `${escapeJobCardHtml(label)} (${escapeJobCardHtml(unit)})`;
+        const inputId = `jc-reading-${i}`;
+        if (label !== 'Bulk tank fuel level') {
+          return `<label class="text-[11px] text-zinc-400">${caption}<input id="${inputId}" inputmode="decimal" maxlength="60" class="jobcard-input" /></label>`;
+        }
+        return `
+          <div class="text-[11px] text-zinc-400">
+            <label for="${inputId}">${caption}</label>
+            <div class="mt-1 flex items-center gap-2">
+              <input id="jc-reading-na-${i}" type="checkbox" class="peer" aria-label="Bulk tank fuel level is not applicable" />
+              <label for="jc-reading-na-${i}" class="whitespace-nowrap">N/A</label>
+              <input id="${inputId}" inputmode="decimal" maxlength="60" class="jobcard-input !mt-0 min-w-0 peer-checked:hidden" />
+            </div>
+          </div>`;
+      }).join('');
 
       const renderTest = (targetId, items, prefix) => {
         const target = document.getElementById(targetId);
@@ -3120,7 +3134,10 @@
         customerSignature: includeSignatures ? jobCardSignatureData('customer') : '', servicemanSignature: includeSignatures ? jobCardSignatureData('serviceman') : ''
       };
       const checks = SINABO_CHECK_ITEMS.map((label, i) => ({ label, result: value(`jc-check-${i}`), notes: value(`jc-check-note-${i}`) }));
-      const readings = SINABO_READING_ITEMS.map(([label, unit], i) => ({ label, unit, value: value(`jc-reading-${i}`), notes: '' }));
+      const readings = SINABO_READING_ITEMS.map(([label, unit], i) => {
+        const notApplicable = document.getElementById(`jc-reading-na-${i}`)?.checked;
+        return { label, unit: notApplicable ? '' : unit, value: notApplicable ? 'N/A' : value(`jc-reading-${i}`), notes: '' };
+      });
       const collectTests = (items, prefix) => items.map((item, i) => { const config = typeof item === 'string' ? { label: item, unit: '' } : item; return { label: config.label, unit: config.unit || '', result: value(`${prefix}-result-${i}`), notes: value(`${prefix}-note-${i}`) }; });
       const parts = [...(document.getElementById('sinabo-parts')?.children || [])].map(row => [...row.querySelectorAll('input')].map(input => input.value.trim())).filter(row => row.some(Boolean)).map(([item, quantity, notes]) => ({ item, quantity, notes }));
       const personnel = [...(document.querySelectorAll('#sinabo-personnel [data-jobcard-personnel-select]') || [])]
@@ -3245,7 +3262,13 @@
       }
       const map = { 'jc-schedule': 'serviceScheduleNo', 'jc-date': 'date', 'jc-unit-ref': 'jobNo', 'jc-service-type': 'serviceType', 'jc-customer': 'customer', 'jc-order-no': 'orderNo', 'jc-site': 'site', 'jc-hour-metre': 'hourMetre', 'jc-engine-type': 'engineType', 'jc-alternator-type': 'alternatorType', 'jc-travel-time': 'travelTime', 'jc-time-on-site': 'timeOnSite', 'jc-kilometres': 'kilometres', 'jc-remarks': 'remarks', 'jc-customer-rep': 'customerRepName' };
       Object.entries(map).forEach(([id, key]) => { const el = document.getElementById(id); if (el) el.value = data[key] || (key === 'jobNo' ? data.unitRef : '') || ''; });
-      (data.readings || []).forEach((row, i) => { const el = document.getElementById(`jc-reading-${i}`); if (el) el.value = row.value || ''; });
+      SINABO_READING_ITEMS.forEach((_, i) => {
+        const reading = document.getElementById(`jc-reading-${i}`);
+        const notApplicable = document.getElementById(`jc-reading-na-${i}`);
+        const savedValue = data.readings?.[i]?.value ?? '';
+        if (notApplicable) notApplicable.checked = savedValue === 'N/A';
+        if (reading) reading.value = notApplicable?.checked ? '' : savedValue;
+      });
       const restoreChecklistRows = (items, rows, resultPrefix, notePrefix) => {
         const savedByLabel = new Map(rows.map(row => [row.label, row]));
         items.forEach((item, i) => {

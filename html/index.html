@@ -2756,7 +2756,7 @@
     const SINABO_CHECK_ITEMS = [
       'Oil level', 'Oil leaks', 'Radiator core', 'Coolant level', 'Coolant & heater hoses',
       'Jacket water heater on', 'Fan belts tension / condition', 'Fuel leaks', 'Filter / water trap',
-      'Battery condition', 'Battery electrolyte level', 'Air cleaner element'
+      'Battery condition', 'Air cleaner element'
     ];
     const SINABO_READING_ITEMS = [
       ['Battery voltage', 'Volts'], ['Battery volt drop', 'Volts'],
@@ -3245,20 +3245,20 @@
       }
       const map = { 'jc-schedule': 'serviceScheduleNo', 'jc-date': 'date', 'jc-unit-ref': 'jobNo', 'jc-service-type': 'serviceType', 'jc-customer': 'customer', 'jc-order-no': 'orderNo', 'jc-site': 'site', 'jc-hour-metre': 'hourMetre', 'jc-engine-type': 'engineType', 'jc-alternator-type': 'alternatorType', 'jc-travel-time': 'travelTime', 'jc-time-on-site': 'timeOnSite', 'jc-kilometres': 'kilometres', 'jc-remarks': 'remarks', 'jc-customer-rep': 'customerRepName' };
       Object.entries(map).forEach(([id, key]) => { const el = document.getElementById(id); if (el) el.value = data[key] || (key === 'jobNo' ? data.unitRef : '') || ''; });
-      (data.checks || []).forEach((row, i) => { const sel = document.getElementById(`jc-check-${i}`); const note = document.getElementById(`jc-check-note-${i}`); if (sel) sel.value = row.result || ''; if (note) note.value = row.notes || ''; });
       (data.readings || []).forEach((row, i) => { const el = document.getElementById(`jc-reading-${i}`); if (el) el.value = row.value || ''; });
-      const restoreTests = (items, rows, prefix) => {
+      const restoreChecklistRows = (items, rows, resultPrefix, notePrefix) => {
         const savedByLabel = new Map(rows.map(row => [row.label, row]));
         items.forEach((item, i) => {
           const row = savedByLabel.get(typeof item === 'string' ? item : item.label);
-          const result = document.getElementById(`${prefix}-result-${i}`);
-          const note = document.getElementById(`${prefix}-note-${i}`);
+          const result = document.getElementById(`${resultPrefix}-${i}`);
+          const note = document.getElementById(`${notePrefix}-${i}`);
           if (result) result.value = row?.result || '';
           if (note) note.value = row?.notes || '';
         });
       };
-      restoreTests(SINABO_RUN_TESTS, data.runTests || [], 'jc-run');
-      restoreTests(SINABO_CONTROL_TESTS, data.controlTests || [], 'jc-control');
+      restoreChecklistRows(SINABO_CHECK_ITEMS, data.checks || [], 'jc-check', 'jc-check-note');
+      restoreChecklistRows(SINABO_RUN_TESTS, data.runTests || [], 'jc-run-result', 'jc-run-note');
+      restoreChecklistRows(SINABO_CONTROL_TESTS, data.controlTests || [], 'jc-control-result', 'jc-control-note');
       const parts = document.getElementById('sinabo-parts'); parts.innerHTML = ''; (data.parts?.length ? data.parts : [{}]).forEach(row => addJobCardPartRow(row.item, row.quantity, row.notes));
       if (data.company !== 'USS' && data.company !== 'UES') { const personnel = document.getElementById('sinabo-personnel'); personnel.innerHTML = ''; (data.personnel?.length ? data.personnel : ['']).forEach(name => addJobCardPersonnelRow(name)); }
       document.getElementById('jc-serviceman').value = currentUser?.name || data.servicemanName || '';

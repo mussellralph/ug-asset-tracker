@@ -58,7 +58,9 @@ function createPdf(data, signer, signatures) {
     const left = 20, width = doc.page.width - 40;
     const ink = '#20252d', muted = '#68717d', red = '#a71932', rule = '#aeb5bf';
     const people = Array.isArray(data.personnel) ? [...new Set(data.personnel.map(n => clean(n, 120)).filter(Boolean))].slice(0, 20) : [];
-    const checks = Array.isArray(data.checks) ? data.checks.slice(0, 16) : [];
+    const checks = Array.isArray(data.checks)
+      ? data.checks.slice(0, 16).filter(row => row.label !== 'Battery electrolyte level')
+      : [];
     const readings = Array.isArray(data.readings) ? data.readings.slice(0, 20) : [];
     const runTests = Array.isArray(data.runTests)
       ? data.runTests.slice(0, 12).filter(row => row.label !== 'Check speed cut out relay')

@@ -213,7 +213,15 @@ function createPdf(data, signer, signatures) {
       const testRows = tests.map(r => [r.label, r.unit ? (r.result || '') + ' ' + r.unit : r.result, r.notes]);
       y = pair({ title: 'Run engine and control panel tests', headers: ['Test', 'Result', 'Notes'], rows: testRows, ratios: [0.5, 0.2, 0.3] },
         { title: 'Parts / consumables supplied', headers: ['Item', 'Qty', 'Notes'], rows: parts.map(r => [r.item, r.quantity, r.notes]), ratios: [0.52, 0.16, 0.32] }, y) + 5;
-      y = grid([['Travel time', data.travelTime], ['Time on site', data.timeOnSite], ['Kilometres', data.kilometres]], 3, y, 22) + 4;
+      function formatTimeRange(start, finish, savedDuration) {
+        if (!start && !finish) return savedDuration;
+        return `Start ${start || '-'} / Finish ${finish || '-'}`;
+      }
+      y = grid([
+        ['Travel time', formatTimeRange(data.travelStart, data.travelFinish, data.travelTime)],
+        ['Time on site', formatTimeRange(data.siteStart, data.siteFinish, data.timeOnSite)],
+        ['Kilometres', data.kilometres]
+      ], 3, y, 22) + 4;
       block('Remarks', data.remarks, left, y, width, 34, 3, 6.4, 2000);
       y += 36;
     }

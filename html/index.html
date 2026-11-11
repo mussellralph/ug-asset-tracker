@@ -591,7 +591,7 @@
             </h2>
             <p class="text-xs text-zinc-400">Click Sign Out or Return on any Ultimate Group vehicle to record starting/closing mileage</p>
           </div>
-          <button onclick="openAddVehicleShortcut()" class="px-3.5 py-2 bg-[#C41E3A] hover:bg-[#a61730] text-white font-bold rounded-lg text-xs flex items-center gap-1.5 shadow transition self-start sm:self-auto">
+          <button id="fleet-add-vehicle-button" onclick="openAddVehicleShortcut()" class="px-3.5 py-2 bg-[#C41E3A] hover:bg-[#a61730] text-white font-bold rounded-lg text-xs flex items-center gap-1.5 shadow transition self-start sm:self-auto">
             <i class="fa-solid fa-plus"></i> Add Fleet Vehicle
           </button>
         </div>
@@ -4117,6 +4117,7 @@
 
       const perms = getEffectivePermissions();
       const canEdit = Boolean(perms.canEditRegister);
+      document.getElementById('fleet-add-vehicle-button')?.classList.toggle('hidden', !canEdit);
 
       const fleetVehicles = tools.filter(t => t.category === 'Fleet / Vehicle');
       const outVehicles = fleetVehicles.filter(v => v.status === 'Checked Out');
@@ -4162,7 +4163,7 @@
 
       // Render Fleet Cards
       if (fleetVehicles.length === 0) {
-        fleetGrid.innerHTML = `<div class="col-span-3 text-center text-xs text-zinc-500 py-6">No vehicles registered yet. Click "+ Add Fleet Vehicle" above.</div>`;
+        fleetGrid.innerHTML = `<div class="col-span-3 text-center text-xs text-zinc-500 py-6">No fleet vehicles registered yet${canEdit ? '. Use “Add Fleet Vehicle” above to register one.' : '.'}</div>`;
       } else {
         fleetGrid.innerHTML = fleetVehicles.map(v => {
           const isOut = v.status === 'Checked Out';
@@ -4349,6 +4350,10 @@
     }
 
     function openAddVehicleShortcut() {
+      if (!getEffectivePermissions().canEditRegister) {
+        showToast('Only staff with asset register permission can add fleet vehicles.', 'error');
+        return;
+      }
       openAddToolModal();
       const catSel = document.getElementById('new-tool-cat');
       if (catSel) {

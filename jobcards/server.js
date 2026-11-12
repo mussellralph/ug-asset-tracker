@@ -9,7 +9,14 @@ const { Pool } = require('pg');
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const outputRoot = process.env.JOBCARDS_DIR || '/jobcards';
-const allowedCompanies = new Set(['SINABO', 'UES', 'USS']);
+const contractingCompany = 'SINABO_CONTRACTING';
+const contractingFolder = 'SINABO Contracting';
+const allowedCompanies = new Set(['SINABO', contractingCompany, 'UES', 'USS']);
+// Contracting cards use the existing SINABO database company, with the card type in details.
+const cardCompanySql = `CASE
+  WHEN company = 'SINABO' AND details->>'company' = '${contractingCompany}' THEN '${contractingCompany}'
+  ELSE company
+END`;
 const maxBodyBytes = 4 * 1024 * 1024;
 
 function send(res, status, payload) {
@@ -49,8 +56,11 @@ function signatureBuffer(value) {
 
 function createPdf(data, signer, signatures) {
   return new Promise((resolve, reject) => {
-    const utility = data.company === 'USS' || data.company === 'UES';
-    const doc = new PDFDocument({ size: 'A4', margin: 16, info: { Title: (data.company || 'SINABO') + ' Job Card', Author: signer } });
+    const company = data.company || 'SINABO';
+    const contracting = company === contractingCompany;
+    const utility = company !== 'SINABO';
+    const companyName = contracting ? 'Sinabo Contracting' : company;
+    const doc = new PDFDocument({ size: 'A4', margin: 16, info: { Title: companyName + ' Job Card', Author: signer } });
     const chunks = [];
     doc.on('data', chunk => chunks.push(chunk));
     doc.on('error', reject);
@@ -173,7 +183,9 @@ function createPdf(data, signer, signatures) {
         logoY + (logoH - serviceTypeHeight) / 2, serviceTypeWidth, serviceTypeHeight);
     }
     let y = logoY + logoH + 3;
-    doc.font('Helvetica-Bold').fontSize(9).fillColor(ink).text((utility ? 'JOB CARD NO. ' : 'SERVICE SCHEDULE ') + clean(data.serviceScheduleNo, 50), left, y, { width, align: 'center', lineBreak: false });
+    let referenceLabel = utility ? 'JOB CARD NO.' : 'SERVICE SCHEDULE';
+    if (contracting) referenceLabel = 'SINABO CONTRACTING - ' + referenceLabel;
+    doc.font('Helvetica-Bold').fontSize(9).fillColor(ink).text(`${referenceLabel} ${clean(data.serviceScheduleNo, 50)}`, left, y, { width, align: 'center', lineBreak: false });
     y += 14;
 
     if (utility) {
@@ -240,8 +252,9 @@ async function handleSubmit(req, res) {
     const data = await readJson(req);
     const company = clean(data.company, 20).toUpperCase();
     if (!allowedCompanies.has(company)) return send(res, 400, { error: 'Select a valid company.' });
+    data.company = company;
     if (company === 'SINABO' && (!clean(data.customer) || !clean(data.site) || !clean(data.serviceScheduleNo) || !clean(data.jobNo || data.unitRef))) return send(res, 400, { error: 'Complete the customer, site, service schedule number and Job No.' });
-    if ((company === 'USS' || company === 'UES') && (!clean(data.customer) || !clean(data.site) || !clean(data.serviceScheduleNo) || !clean(data.date))) return send(res, 400, { error: 'Complete the date, customer, site and Job No.' });
+    if (company !== 'SINABO' && (!clean(data.customer) || !clean(data.site) || !clean(data.serviceScheduleNo) || !clean(data.date))) return send(res, 400, { error: 'Complete the date, customer, site and Job No.' });
     const clientId = clean(data.clientId, 120);
     if (clientId.length < 8) return send(res, 400, { error: 'Submission reference is missing. Please try again.' });
 
@@ -257,14 +270,19 @@ async function handleSubmit(req, res) {
     const submittedBy = session.rows[0].name;
     if (clean(data.servicemanName, 160) !== submittedBy) return send(res, 403, { error: `Sign in as ${clean(data.servicemanName, 160) || 'the serviceman'} to upload this signed job card.` });
     const id = crypto.createHash('sha256').update(clientId).digest('hex').slice(0, 32);
-    const previous = await client.query('SELECT company, file_name AS "fileName", submitted_by AS "submittedBy" FROM public.job_cards WHERE id = $1', [id]);
+    const previous = await client.query(`
+      SELECT ${cardCompanySql} AS company, company AS "storedCompany",
+             file_name AS "fileName", submitted_by AS "submittedBy"
+        FROM public.job_cards
+       WHERE id = $1`, [id]);
     if (previous.rowCount) {
-      const saved = previous.rows[0];
+      const { storedCompany, ...saved } = previous.rows[0];
       if (saved.company !== company) return send(res, 409, { error: 'This submission reference is already recorded under another company.' });
-      const savedPath = path.join(outputRoot, saved.company, saved.fileName);
+      const folder = company === contractingCompany && storedCompany === 'SINABO' ? contractingFolder : storedCompany;
+      const savedPath = path.join(outputRoot, folder, saved.fileName);
       try {
         await fs.access(savedPath);
-        return send(res, 200, { ok: true, id, ...saved, alreadySubmitted: true });
+        return send(res, 200, { ok: true, id, ...saved, folder, alreadySubmitted: true });
       } catch {}
       // The database can retain the submission record after a share was detached or its PDF was removed.
       // Rebuild the missing file before reporting success for a retry.
@@ -273,11 +291,14 @@ async function handleSubmit(req, res) {
       const pdf = await createPdf(data, submittedBy, signatures);
       await fs.writeFile(savedPath, pdf, { flag: 'wx' });
       fileWritten = true;
-      return send(res, 200, { ok: true, id, ...saved, restoredFile: true });
+      return send(res, 200, { ok: true, id, ...saved, folder, restoredFile: true });
     }
-    const jobNo = clean(company === 'USS' || company === 'UES' ? data.serviceScheduleNo : (data.jobNo || data.unitRef), 80).replace(/[^A-Za-z0-9_-]/g, '_');
+    const jobNo = clean(company === 'SINABO' ? (data.jobNo || data.unitRef) : data.serviceScheduleNo, 80).replace(/[^A-Za-z0-9_-]/g, '_');
     const fileName = `${company}_JC_${jobNo}.pdf`;
-    const directory = path.join(outputRoot, company);
+    const contracting = company === contractingCompany;
+    const storedCompany = contracting ? 'SINABO' : company;
+    const folder = contracting ? contractingFolder : company;
+    const directory = path.join(outputRoot, folder);
     finalPath = path.join(directory, fileName);
     const pdf = await createPdf(data, submittedBy, signatures);
 
@@ -291,9 +312,9 @@ async function handleSubmit(req, res) {
     await client.query(`
       INSERT INTO public.job_cards (id, company, file_name, submitted_by, customer, service_schedule_no, details)
       VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb)`,
-    [id, company, fileName, submittedBy, clean(data.customer, 200), clean(data.serviceScheduleNo, 100), JSON.stringify({ ...auditData, clientId })]);
+    [id, storedCompany, fileName, submittedBy, clean(data.customer, 200), clean(data.serviceScheduleNo, 100), JSON.stringify({ ...auditData, clientId })]);
     await client.query('COMMIT');
-    send(res, 201, { ok: true, id, company, fileName, submittedBy });
+    send(res, 201, { ok: true, id, company, folder, fileName, submittedBy });
   } catch (error) {
     if (client) { try { await client.query('ROLLBACK'); } catch {} }
     if (fileWritten && finalPath) { try { await fs.unlink(finalPath); } catch {} }
@@ -317,7 +338,7 @@ async function handleHistory(req, res) {
        LIMIT 1`, [token]);
     if (!session.rowCount) return send(res, 401, { error: 'Your sign-in session expired.' });
     const result = await pool.query(`
-      SELECT id, company, file_name AS "fileName", submitted_by AS "submittedBy",
+      SELECT id, ${cardCompanySql} AS company, file_name AS "fileName", submitted_by AS "submittedBy",
              customer, service_schedule_no AS "serviceScheduleNo", submitted_at AS "submittedAt",
              details->>'clientId' AS "clientId"
         FROM public.job_cards j

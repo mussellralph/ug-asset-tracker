@@ -98,7 +98,7 @@ ALTER TABLE public.activity_logs ADD COLUMN IF NOT EXISTS performed_by TEXT;
 -- Submitted service schedules are saved as signed PDF files on the TrueNAS share.
 CREATE TABLE IF NOT EXISTS public.job_cards (
   id TEXT PRIMARY KEY,
-  company TEXT NOT NULL CHECK (company IN ('SINABO', 'SINABO_CONTRACTING', 'UES', 'USS')),
+  company TEXT NOT NULL CHECK (company IN ('SINABO', 'UES', 'USS')),
   file_name TEXT NOT NULL,
   submitted_by TEXT NOT NULL,
   customer TEXT,
@@ -106,22 +106,6 @@ CREATE TABLE IF NOT EXISTS public.job_cards (
   submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   details JSONB NOT NULL DEFAULT '{}'::jsonb
 );
--- Extend the company check on existing installations when the schema is reapplied.
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1
-      FROM pg_constraint
-     WHERE conrelid = 'public.job_cards'::regclass
-       AND conname = 'job_cards_company_check'
-       AND strpos(pg_get_constraintdef(oid), 'SINABO_CONTRACTING') > 0
-  ) THEN
-    ALTER TABLE public.job_cards DROP CONSTRAINT IF EXISTS job_cards_company_check;
-    ALTER TABLE public.job_cards ADD CONSTRAINT job_cards_company_check
-      CHECK (company IN ('SINABO', 'SINABO_CONTRACTING', 'UES', 'USS'));
-  END IF;
-END;
-$;
 REVOKE ALL ON public.job_cards FROM PUBLIC, anon, authenticated;
 
 -- Job card assistants are a separate roster from app login accounts.

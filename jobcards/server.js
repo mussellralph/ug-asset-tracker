@@ -9,7 +9,7 @@ const { Pool } = require('pg');
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const outputRoot = process.env.JOBCARDS_DIR || '/jobcards';
-const allowedCompanies = new Set(['SINABO', 'UES', 'USS']);
+const allowedCompanies = new Set(['SINABO', 'SINABO_CONTRACTING', 'UES', 'USS']);
 const maxBodyBytes = 4 * 1024 * 1024;
 
 function send(res, status, payload) {
@@ -49,8 +49,11 @@ function signatureBuffer(value) {
 
 function createPdf(data, signer, signatures) {
   return new Promise((resolve, reject) => {
-    const utility = data.company === 'USS' || data.company === 'UES';
-    const doc = new PDFDocument({ size: 'A4', margin: 16, info: { Title: (data.company || 'SINABO') + ' Job Card', Author: signer } });
+    const company = data.company || 'SINABO';
+    const contracting = company === 'SINABO_CONTRACTING';
+    const utility = company !== 'SINABO';
+    const companyName = contracting ? 'Sinabo Contracting' : company;
+    const doc = new PDFDocument({ size: 'A4', margin: 16, info: { Title: companyName + ' Job Card', Author: signer } });
     const chunks = [];
     doc.on('data', chunk => chunks.push(chunk));
     doc.on('error', reject);
@@ -173,7 +176,9 @@ function createPdf(data, signer, signatures) {
         logoY + (logoH - serviceTypeHeight) / 2, serviceTypeWidth, serviceTypeHeight);
     }
     let y = logoY + logoH + 3;
-    doc.font('Helvetica-Bold').fontSize(9).fillColor(ink).text((utility ? 'JOB CARD NO. ' : 'SERVICE SCHEDULE ') + clean(data.serviceScheduleNo, 50), left, y, { width, align: 'center', lineBreak: false });
+    let referenceLabel = utility ? 'JOB CARD NO.' : 'SERVICE SCHEDULE';
+    if (contracting) referenceLabel = 'SINABO CONTRACTING - ' + referenceLabel;
+    doc.font('Helvetica-Bold').fontSize(9).fillColor(ink).text(`${referenceLabel} ${clean(data.serviceScheduleNo, 50)}`, left, y, { width, align: 'center', lineBreak: false });
     y += 14;
 
     if (utility) {
@@ -240,8 +245,9 @@ async function handleSubmit(req, res) {
     const data = await readJson(req);
     const company = clean(data.company, 20).toUpperCase();
     if (!allowedCompanies.has(company)) return send(res, 400, { error: 'Select a valid company.' });
+    data.company = company;
     if (company === 'SINABO' && (!clean(data.customer) || !clean(data.site) || !clean(data.serviceScheduleNo) || !clean(data.jobNo || data.unitRef))) return send(res, 400, { error: 'Complete the customer, site, service schedule number and Job No.' });
-    if ((company === 'USS' || company === 'UES') && (!clean(data.customer) || !clean(data.site) || !clean(data.serviceScheduleNo) || !clean(data.date))) return send(res, 400, { error: 'Complete the date, customer, site and Job No.' });
+    if (company !== 'SINABO' && (!clean(data.customer) || !clean(data.site) || !clean(data.serviceScheduleNo) || !clean(data.date))) return send(res, 400, { error: 'Complete the date, customer, site and Job No.' });
     const clientId = clean(data.clientId, 120);
     if (clientId.length < 8) return send(res, 400, { error: 'Submission reference is missing. Please try again.' });
 
@@ -275,7 +281,7 @@ async function handleSubmit(req, res) {
       fileWritten = true;
       return send(res, 200, { ok: true, id, ...saved, restoredFile: true });
     }
-    const jobNo = clean(company === 'USS' || company === 'UES' ? data.serviceScheduleNo : (data.jobNo || data.unitRef), 80).replace(/[^A-Za-z0-9_-]/g, '_');
+    const jobNo = clean(company === 'SINABO' ? (data.jobNo || data.unitRef) : data.serviceScheduleNo, 80).replace(/[^A-Za-z0-9_-]/g, '_');
     const fileName = `${company}_JC_${jobNo}.pdf`;
     const directory = path.join(outputRoot, company);
     finalPath = path.join(directory, fileName);

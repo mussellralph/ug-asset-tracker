@@ -79,6 +79,24 @@
       table th, table td { overflow-wrap: anywhere; vertical-align: top; }
     }
 
+    #tab-btn-checkouts {
+      min-height: 3.5rem;
+      padding-inline: 0.65rem;
+      border: 1px solid #a92c45;
+      border-radius: 9999px;
+      font-weight: 800;
+      line-height: 1.15;
+    }
+
+    #tab-btn-checkouts:not([aria-current="page"]) {
+      background-color: #351e27;
+      color: #ffe4e9;
+    }
+
+    #tab-btn-checkouts:not([aria-current="page"]):hover {
+      background-color: #522533;
+    }
+
     @media (min-width: 768px) and (max-width: 1199px) {
       .desktop-tab-nav {
         display: grid !important;
@@ -265,14 +283,18 @@
       <button onclick="switchTab('jobcards')" id="tab-btn-jobcards" class="flex-1 py-2.5 px-3 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition duration-150 text-zinc-400 hover:text-white hover:bg-zinc-800/70">
         <i class="fa-solid fa-file-signature text-amber-400"></i> Job Cards
       </button>
-      <button onclick="switchTab('scan')" id="tab-btn-scan" class="flex-1 py-2.5 px-4 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition duration-150 bg-[#C41E3A] text-white shadow-md">
+      <button onclick="switchTab('scan')" id="tab-btn-scan" aria-current="page" class="flex-1 py-2.5 px-4 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition duration-150 bg-[#C41E3A] text-white shadow-md">
         <i class="fa-solid fa-qrcode"></i> QR Sign-Out / Sign-In
       </button>
       <button onclick="switchTab('fleet')" id="tab-btn-fleet" class="flex-1 py-2.5 px-4 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition duration-150 text-zinc-400 hover:text-white hover:bg-zinc-800/70">
         <i class="fa-solid fa-truck-pickup text-sky-400"></i> Fleet &amp; Mileage <span class="tab-nav-count">(<span id="nav-fleet-count">3</span>)</span>
       </button>
-      <button onclick="switchTab('checkouts')" id="tab-btn-checkouts" class="flex-1 py-2.5 px-4 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition duration-150 text-zinc-400 hover:text-white hover:bg-zinc-800/70">
-        <i class="fa-solid fa-gauge-high"></i> Manager Dashboard <span class="tab-nav-count">(<span id="nav-checkout-count">0</span> Out)</span>
+      <button onclick="switchTab('checkouts')" id="tab-btn-checkouts" class="flex-1 py-2.5 px-4 text-sm flex items-center justify-center gap-2 transition duration-150">
+        <i class="fa-solid fa-gauge-high shrink-0" aria-hidden="true"></i>
+        <span class="min-w-0 flex flex-col items-center gap-1 text-center">
+          <span>Manager Dashboard</span>
+          <span class="tab-nav-count rounded-full bg-black/25 px-2 py-0.5 text-[10px] whitespace-nowrap"><span id="nav-checkout-count">0</span> Out</span>
+        </span>
       </button>
       <button onclick="switchTab('inventory')" id="tab-btn-inventory" class="flex-1 py-2.5 px-4 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition duration-150 text-zinc-400 hover:text-white hover:bg-zinc-800/70">
         <i class="fa-solid fa-boxes-stacked"></i> Master Asset Register
@@ -3515,6 +3537,7 @@
           btn.className = (t === tab
             ? "flex-1 py-2.5 px-4 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition duration-150 bg-[#C41E3A] text-white shadow-md"
             : "flex-1 py-2.5 px-4 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition duration-150 text-zinc-400 hover:text-white hover:bg-zinc-800/70");
+          btn.setAttribute('aria-current', t === tab ? 'page' : 'false');
           btn.classList.toggle('hidden', !isVisible);
         }
         if (mob) {

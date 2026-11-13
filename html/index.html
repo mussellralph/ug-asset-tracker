@@ -135,6 +135,15 @@
       background-color: #082f49;
     }
 
+    #cable-current-chart th, #cable-current-chart td {
+      padding: 0.625rem clamp(0.2rem, 1.2vw, 0.875rem);
+      vertical-align: middle;
+      overflow-wrap: normal;
+    }
+
+    #cable-current-chart tbody tr:nth-child(even) { background: #18181b; }
+    #cable-current-chart tbody th { color: #fda4af; font-weight: 600; }
+
     @media (min-width: 768px) and (max-width: 1199px) {
       .desktop-tab-nav {
         display: grid !important;
@@ -1064,6 +1073,46 @@
             <button type="button" id="technical-data-back" hidden class="shrink-0 rounded-lg bg-zinc-800 px-3 py-2">Up one folder</button>
             <span id="technical-data-path" class="min-w-0 break-words text-zinc-300">Shared references</span>
           </div>
+          <section id="cable-current-chart" aria-labelledby="cable-current-chart-title" hidden class="space-y-3">
+            <div>
+              <h3 id="cable-current-chart-title" class="text-base font-bold text-white"><i class="fa-solid fa-bolt mr-2 text-amber-400" aria-hidden="true"></i>SWA Copper Cable Current Ratings</h3>
+              <p class="mt-1 text-sm text-zinc-400">3- and 4-core, PVC-insulated, steel wire armoured cable, 600/1000 V, manufactured to SANS 1507-3.</p>
+            </div>
+            <div class="overflow-hidden rounded-xl border border-zinc-800 bg-[#111113]">
+              <table aria-labelledby="cable-current-chart-title" aria-describedby="cable-current-chart-conditions" class="w-full table-fixed text-center text-xs leading-tight sm:text-sm">
+                <colgroup><col class="w-[19%]"><col class="w-[19%]"><col class="w-[19%]"><col class="w-[19%]"><col class="w-[24%]"></colgroup>
+                <thead class="border-b border-rose-900/70 bg-zinc-900 text-zinc-200">
+                  <tr>
+                    <th scope="col">Size <span class="block whitespace-nowrap text-zinc-400">(mm²)</span></th>
+                    <th scope="col">Direct buried <span class="block text-zinc-400">(A)</span></th>
+                    <th scope="col">In duct <span class="block text-zinc-400">(A)</span></th>
+                    <th scope="col">Free air <span class="block text-zinc-400">(A)</span></th>
+                    <th scope="col">3-phase volt drop <span class="block whitespace-nowrap text-zinc-400">(mV/A/m)</span></th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-zinc-800 tabular-nums text-zinc-200">
+                <tr><th scope="row">1.5</th><td>24</td><td>20</td><td>19</td><td>25.080</td></tr>
+                <tr><th scope="row">2.5</th><td>32</td><td>26</td><td>26</td><td>15.363</td></tr>
+                <tr><th scope="row">4</th><td>42</td><td>34</td><td>35</td><td>9.561</td></tr>
+                <tr><th scope="row">6</th><td>53</td><td>43</td><td>45</td><td>6.391</td></tr>
+                <tr><th scope="row">10</th><td>70</td><td>58</td><td>62</td><td>3.793</td></tr>
+                <tr><th scope="row">16</th><td>91</td><td>75</td><td>83</td><td>2.390</td></tr>
+                <tr><th scope="row">25</th><td>119</td><td>96</td><td>110</td><td>1.515</td></tr>
+                <tr><th scope="row">35</th><td>143</td><td>116</td><td>135</td><td>1.097</td></tr>
+                <tr><th scope="row">50</th><td>169</td><td>138</td><td>163</td><td>0.817</td></tr>
+                <tr><th scope="row">70</th><td>210</td><td>171</td><td>207</td><td>0.576</td></tr>
+                <tr><th scope="row">95</th><td>251</td><td>205</td><td>251</td><td>0.427</td></tr>
+                <tr><th scope="row">120</th><td>285</td><td>234</td><td>290</td><td>0.348</td></tr>
+                <tr><th scope="row">150</th><td>320</td><td>263</td><td>332</td><td>0.294</td></tr>
+                <tr><th scope="row">185</th><td>361</td><td>298</td><td>378</td><td>0.250</td></tr>
+                <tr><th scope="row">240</th><td>416</td><td>344</td><td>445</td><td>0.211</td></tr>
+                <tr><th scope="row">300</th><td>465</td><td>385</td><td>510</td><td>0.189</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p id="cable-current-chart-conditions" class="text-xs leading-relaxed text-zinc-400">Rating conditions: 70 °C conductor, 25 °C ground, 30 °C shaded air, 1.2 K·m/W soil thermal resistivity and 500 mm depth to the top of the cable or duct. Check the cable manufacturer's data and apply the installation-specific derating factors when sizing a cable.</p>
+            <a href="https://www.aberdare.co.za/wp-content/uploads/Facts-Figures-English-2025.pdf" target="_blank" rel="noopener noreferrer" class="inline-block text-xs font-medium text-sky-300 underline underline-offset-2 hover:text-sky-200">Aberdare Cables Facts &amp; Figures, Tables 6.1–6.2 (PDF)</a>
+          </section>
           <p id="technical-data-status" role="status" class="text-sm text-zinc-300"></p>
           <ul id="technical-data-list" class="divide-y divide-zinc-800"></ul>
         </div>
@@ -3604,6 +3653,7 @@
     function resetTechnicalData() {
       technicalDataRequest++;
       technicalDataPath = '';
+      document.getElementById('cable-current-chart').hidden = true;
       for (const tile of technicalDataTiles) tile.setAttribute('aria-pressed', 'false');
       document.getElementById('technical-data-list').replaceChildren();
       document.getElementById('technical-data-path').textContent = 'Shared references';
@@ -3632,8 +3682,10 @@
       const back = document.getElementById('technical-data-back');
       const parts = folder ? folder.split('/') : [];
       const category = parts[0];
+      const showCableChart = folder === 'Cable Current Chart';
       const activeTile = technicalDataTiles.find(tile => tile.dataset.technicalCategory === category);
       technicalDataPath = folder;
+      document.getElementById('cable-current-chart').hidden = !showCableChart;
       for (const tile of technicalDataTiles) tile.setAttribute('aria-pressed', String(tile === activeTile));
       list.replaceChildren();
       back.hidden = !folder;
@@ -3644,7 +3696,7 @@
       };
       document.getElementById('technical-data-path').textContent = folder ? parts.join(' / ') : 'Shared references';
       if (!token) {
-        status.textContent = 'Connect to the server and sign in to access Technical Data.';
+        status.textContent = 'Connect to the server and sign in to access shared files.';
         return;
       }
       status.textContent = 'Loading references…';
@@ -3653,7 +3705,7 @@
         const result = await response.json();
         if (request !== technicalDataRequest || token !== sessionToken) return;
         const entries = folder ? result.entries : result.entries.filter(entry => !entry.directory || !technicalDataCategories.has(entry.name));
-        status.textContent = entries.length ? '' : folder ? 'No references in this folder yet.' : 'Select a category to view its files.';
+        status.textContent = entries.length || showCableChart ? '' : folder ? 'No references in this folder yet.' : 'Select a category to view its files.';
         for (const entry of entries) {
           const item = document.createElement('li');
           const button = document.createElement('button');
@@ -3675,7 +3727,7 @@
       } catch (error) {
         if (request !== technicalDataRequest || token !== sessionToken) return;
         status.textContent = error.status === 404 && parts.length === 1 && activeTile
-          ? 'No references in this category yet.'
+          ? (showCableChart ? '' : 'No references in this category yet.')
           : error.message;
       }
     }

@@ -262,20 +262,20 @@
 
   <div class="hidden md:block bg-[#111113] px-6 pt-3 pb-2">
     <nav aria-label="Main navigation" class="desktop-tab-nav mx-auto max-w-[69rem] md:flex items-center space-x-2 bg-[#18181B] p-1.5 rounded-xl border border-zinc-800">
+      <button onclick="switchTab('jobcards')" id="tab-btn-jobcards" class="flex-1 py-2.5 px-3 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition duration-150 text-zinc-400 hover:text-white hover:bg-zinc-800/70">
+        <i class="fa-solid fa-file-signature text-amber-400"></i> Job Cards
+      </button>
       <button onclick="switchTab('scan')" id="tab-btn-scan" class="flex-1 py-2.5 px-4 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition duration-150 bg-[#C41E3A] text-white shadow-md">
         <i class="fa-solid fa-qrcode"></i> QR Sign-Out / Sign-In
       </button>
-      <button onclick="switchTab('jobcards')" id="tab-btn-jobcards" class="flex-1 py-2.5 px-3 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition duration-150 text-zinc-400 hover:text-white hover:bg-zinc-800/70">
-        <i class="fa-solid fa-file-signature text-amber-400"></i> Job Cards
+      <button onclick="switchTab('fleet')" id="tab-btn-fleet" class="flex-1 py-2.5 px-4 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition duration-150 text-zinc-400 hover:text-white hover:bg-zinc-800/70">
+        <i class="fa-solid fa-truck-pickup text-sky-400"></i> Fleet &amp; Mileage <span class="tab-nav-count">(<span id="nav-fleet-count">3</span>)</span>
       </button>
       <button onclick="switchTab('checkouts')" id="tab-btn-checkouts" class="flex-1 py-2.5 px-4 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition duration-150 text-zinc-400 hover:text-white hover:bg-zinc-800/70">
         <i class="fa-solid fa-gauge-high"></i> Manager Dashboard <span class="tab-nav-count">(<span id="nav-checkout-count">0</span> Out)</span>
       </button>
       <button onclick="switchTab('inventory')" id="tab-btn-inventory" class="flex-1 py-2.5 px-4 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition duration-150 text-zinc-400 hover:text-white hover:bg-zinc-800/70">
         <i class="fa-solid fa-boxes-stacked"></i> Master Asset Register
-      </button>
-      <button onclick="switchTab('fleet')" id="tab-btn-fleet" class="flex-1 py-2.5 px-4 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition duration-150 text-zinc-400 hover:text-white hover:bg-zinc-800/70">
-        <i class="fa-solid fa-truck-pickup text-sky-400"></i> Fleet &amp; Mileage <span class="tab-nav-count">(<span id="nav-fleet-count">3</span>)</span>
       </button>
       <button onclick="switchTab('master')" id="tab-btn-master" class="flex-1 py-2.5 px-4 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition duration-150 text-zinc-400 hover:text-white hover:bg-zinc-800/70">
         <i class="fa-solid fa-user-shield text-[#ff4d6d]"></i> Master Control <span class="tab-nav-count">(<span id="header-staff-count">36</span>)</span>

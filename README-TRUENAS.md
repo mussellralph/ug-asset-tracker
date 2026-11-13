@@ -52,7 +52,7 @@ Keep the existing database directory mounted unchanged at `/mnt/SmartHome/Apps/u
 
 Signed job-card PDFs are saved beneath the existing `/mnt/SmartHome/Jobcards` folder, separated by company.
 
-Create `/mnt/SmartHome/Jobcards/Technical Data` in the existing share and add reference files there. Subfolders can organize documents by company or type. Signed-in staff can browse and download the files from **Technical Data** (under **More** on mobile). Manage the source files through the share and give the app container read access to the folder.
+Create `/mnt/SmartHome/Jobcards/Technical Data` in the existing share and give the app container read access. Add reference files in the main folder or organize them in subfolders. To populate the three category tiles, use subfolders named `Cable Current Chart`, `Busbar Current Chart` and `Volt Drop Calculator`. Signed-in staff can browse and download the files from **Technical Data** (under **More** on mobile).
 
 ## Step 2: Image access
 

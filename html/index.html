@@ -97,6 +97,33 @@
       background-color: #522533;
     }
 
+    #mobile-tab-nav > button {
+      flex: 1 1 0;
+      min-width: 0;
+      text-align: center;
+    }
+
+    #mob-nav-checkouts {
+      flex-grow: 1.5;
+      min-height: 2.75rem;
+      justify-content: center;
+      padding: 0.25rem 0.125rem;
+      border: 1px solid #a92c45;
+      border-radius: 9999px;
+      background-color: #351e27;
+      color: #ffe4e9;
+      font-weight: 800;
+    }
+
+    #mob-nav-checkouts[aria-current="page"] {
+      background-color: #C41E3A;
+      color: #fff;
+    }
+
+    @media (max-width: 359px) {
+      #mobile-tab-nav > button { font-size: 10px; }
+    }
+
     @media (min-width: 768px) and (max-width: 1199px) {
       .desktop-tab-nav {
         display: grid !important;
@@ -1055,10 +1082,18 @@
   </main>
 
   <!-- MOBILE BOTTOM NAVIGATION -->
-  <div class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#18181B]/95 backdrop-blur-md border-t border-zinc-800 px-2 py-2 flex items-center justify-between gap-1">
-    <button onclick="switchTab('scan')" id="mob-nav-scan" class="flex flex-col items-center gap-1 text-[#C41E3A] font-bold text-[11px]">
+  <nav id="mobile-tab-nav" aria-label="Mobile navigation" class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#18181B]/95 backdrop-blur-md border-t border-zinc-800 px-2 py-2 flex items-center justify-between gap-1">
+    <button onclick="switchTab('jobcards')" id="mob-nav-jobcards" class="flex flex-col items-center gap-1 text-zinc-400 hover:text-white font-medium text-[10px] min-w-0">
+      <i class="fa-solid fa-file-signature text-lg"></i>
+      <span>Job Card</span>
+    </button>
+    <button onclick="switchTab('scan')" id="mob-nav-scan" aria-current="page" class="flex flex-col items-center gap-1 text-[#C41E3A] font-bold text-[11px]">
       <i class="fa-solid fa-qrcode text-lg"></i>
       <span>Scan QR</span>
+    </button>
+    <button onclick="switchTab('fleet')" id="mob-nav-fleet" class="flex flex-col items-center gap-1 text-zinc-400 hover:text-white font-medium text-[11px]">
+      <i class="fa-solid fa-truck-pickup text-lg"></i>
+      <span>Fleet</span>
     </button>
     <button onclick="switchTab('checkouts')" id="mob-nav-checkouts" class="flex flex-col items-center gap-1 text-zinc-400 hover:text-white font-medium text-[11px] relative">
       <i class="fa-solid fa-gauge-high text-lg"></i>
@@ -1069,14 +1104,6 @@
       <i class="fa-solid fa-boxes-stacked text-lg"></i>
       <span>Register</span>
     </button>
-    <button onclick="switchTab('fleet')" id="mob-nav-fleet" class="flex flex-col items-center gap-1 text-zinc-400 hover:text-white font-medium text-[11px]">
-      <i class="fa-solid fa-truck-pickup text-lg"></i>
-      <span>Fleet</span>
-    </button>
-    <button onclick="switchTab('jobcards')" id="mob-nav-jobcards" class="flex flex-col items-center gap-1 text-zinc-400 hover:text-white font-medium text-[10px] min-w-0">
-      <i class="fa-solid fa-file-signature text-lg"></i>
-      <span>Job Card</span>
-    </button>
     <button onclick="switchTab('master')" id="mob-nav-master" class="flex flex-col items-center gap-1 text-zinc-400 hover:text-white font-medium text-[11px]">
       <i class="fa-solid fa-user-shield text-lg"></i>
       <span>Master</span>
@@ -1085,7 +1112,7 @@
       <i class="fa-solid fa-cloud-arrow-up text-lg"></i>
       <span>Go-Live</span>
     </button>
-  </div>
+  </nav>
 
   <!-- MODAL 1: TOOL SIGN OUT / SIGN IN DIALOG -->
   <div id="action-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 overflow-y-auto">
@@ -3544,6 +3571,7 @@
           mob.className = (t === tab
             ? "flex flex-col items-center gap-1 text-[#C41E3A] font-bold text-[11px] relative"
             : "flex flex-col items-center gap-1 text-zinc-400 hover:text-white font-medium text-[11px] relative");
+          mob.setAttribute('aria-current', t === tab ? 'page' : 'false');
           mob.classList.toggle('hidden', !isVisible);
         }
       });

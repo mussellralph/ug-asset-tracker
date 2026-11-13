@@ -1057,7 +1057,7 @@
           <h2 class="text-lg font-bold text-white"><i class="fa-solid fa-book text-sky-400 mr-2" aria-hidden="true"></i>Technical Data</h2>
           <button type="button" onclick="loadTechnicalData(technicalDataPath)" class="px-3 py-2 rounded-lg bg-zinc-800 text-sm font-semibold">Refresh</button>
         </div>
-        <div id="technical-data-categories" role="group" aria-label="Technical Data categories" class="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+        <div id="technical-data-categories" role="group" aria-label="Technical Data categories" class="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
           <button type="button" data-technical-category="Cable Current Chart" aria-pressed="false" aria-controls="technical-data-results" onclick="loadTechnicalData(this.dataset.technicalCategory)" class="flex min-h-14 items-center gap-3 rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-3 text-left text-sm font-semibold text-white hover:bg-zinc-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-400">
             <i class="fa-solid fa-bolt shrink-0 text-amber-400" aria-hidden="true"></i><span>Cable Current Chart</span>
           </button>
@@ -1066,6 +1066,9 @@
           </button>
           <button type="button" data-technical-category="Volt Drop Calculator" aria-pressed="false" aria-controls="technical-data-results" onclick="loadTechnicalData(this.dataset.technicalCategory)" class="flex min-h-14 items-center gap-3 rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-3 text-left text-sm font-semibold text-white hover:bg-zinc-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-400">
             <i class="fa-solid fa-calculator shrink-0 text-emerald-400" aria-hidden="true"></i><span>Volt Drop Calculator</span>
+          </button>
+          <button type="button" data-technical-category="Useful Formulas" aria-pressed="false" aria-controls="technical-data-results" onclick="loadTechnicalData(this.dataset.technicalCategory)" class="flex min-h-14 items-center gap-3 rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-3 text-left text-sm font-semibold text-white hover:bg-zinc-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-400">
+            <i class="fa-solid fa-square-root-variable shrink-0 text-violet-400" aria-hidden="true"></i><span>Useful Formulas</span>
           </button>
         </div>
         <div id="technical-data-results" class="space-y-3">

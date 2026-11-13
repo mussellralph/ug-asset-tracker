@@ -100,8 +100,13 @@
     #mobile-tab-nav > button {
       flex: 1 1 0;
       min-width: 0;
+      min-height: 2.75rem;
+      justify-content: center;
       text-align: center;
     }
+
+    #mob-nav-technical-data { flex-grow: 1.25; }
+    #mob-nav-technical-data span { text-wrap: balance; }
 
     #mob-nav-checkouts {
       flex-grow: 1.5;
@@ -1345,16 +1350,19 @@
       <span>Dashboard</span>
       <span id="mob-badge-checkout" class="hidden absolute top-0 right-2 w-2.5 h-2.5 rounded-full bg-[#C41E3A]"></span>
     </button>
+    <button type="button" onclick="switchTab('technical-data')" id="mob-nav-technical-data" class="flex flex-col items-center gap-1 text-zinc-400 hover:text-white font-medium text-[11px]">
+      <i class="fa-solid fa-book text-lg" aria-hidden="true"></i>
+      <span>Technical Data</span>
+    </button>
     <button onclick="switchTab('inventory')" id="mob-nav-inventory" class="flex flex-col items-center gap-1 text-zinc-400 hover:text-white font-medium text-[11px]">
       <i class="fa-solid fa-boxes-stacked text-lg"></i>
       <span>Register</span>
     </button>
-    <button type="button" onclick="toggleMobileMore()" id="mob-nav-more" aria-expanded="false" aria-controls="mobile-more-links" class="flex flex-col items-center gap-1 text-zinc-400 hover:text-white font-medium text-[11px]">
+    <button type="button" onclick="toggleMobileMore()" id="mob-nav-more" aria-expanded="false" aria-controls="mobile-more-links" class="hidden flex flex-col items-center gap-1 text-zinc-400 hover:text-white font-medium text-[11px]">
       <i class="fa-solid fa-ellipsis text-lg" aria-hidden="true"></i>
       <span>More</span>
     </button>
     <div id="mobile-more-links" hidden class="absolute bottom-full right-2 mb-2 w-52 rounded-xl border border-zinc-700 bg-[#18181B] p-1.5 shadow-xl">
-      <button type="button" onclick="switchTab('technical-data')" id="mob-nav-technical-data" class="block w-full rounded-lg px-3 py-3 text-left text-sm hover:bg-zinc-800">Technical Data</button>
       <button type="button" onclick="switchTab('master')" id="mob-nav-master" class="hidden w-full rounded-lg px-3 py-3 text-left text-sm hover:bg-zinc-800">Master Control</button>
       <button type="button" onclick="switchTab('golive')" id="mob-nav-golive" class="hidden w-full rounded-lg px-3 py-3 text-left text-sm hover:bg-zinc-800">Server &amp; Sync</button>
     </div>
@@ -2434,6 +2442,7 @@
 
       document.getElementById('tab-btn-golive').classList.toggle('hidden', !showGoLive);
       document.getElementById('mob-nav-golive').classList.toggle('hidden', !showGoLive);
+      document.getElementById('mob-nav-more').classList.toggle('hidden', !showMaster && !showGoLive);
 
       document.getElementById('btn-add-asset-main').classList.toggle('hidden', !showEdit);
       document.getElementById('btn-import-csv').classList.toggle('hidden', !showEdit);
@@ -3929,7 +3938,7 @@
         return;
       }
 
-      const moreTabs = ['technical-data', 'master', 'golive'];
+      const moreTabs = ['master', 'golive'];
       const moreLinks = document.getElementById('mobile-more-links');
       const moreHadFocus = moreLinks.contains(document.activeElement);
       toggleMobileMore(false, moreHadFocus);
@@ -3937,7 +3946,7 @@
       document.getElementById('mob-nav-more').classList.toggle('text-[#C41E3A]', moreTabs.includes(tab));
       document.getElementById('mob-nav-more').classList.toggle('text-zinc-400', !moreTabs.includes(tab));
 
-      ['scan', 'checkouts', 'inventory', 'fleet', 'jobcards', ...moreTabs].forEach(t => {
+      ['scan', 'checkouts', 'inventory', 'fleet', 'jobcards', 'technical-data', ...moreTabs].forEach(t => {
         const view = document.getElementById(`view-${t}`);
         const btn = document.getElementById(`tab-btn-${t}`);
         const mob = document.getElementById(`mob-nav-${t}`);

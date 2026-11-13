@@ -6,9 +6,11 @@ const fs = require('node:fs/promises');
 const path = require('node:path');
 const PDFDocument = require('pdfkit');
 const { Pool } = require('pg');
+const technicalDataHandler = require('./technical-data');
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const outputRoot = process.env.JOBCARDS_DIR || '/jobcards';
+const handleTechnicalData = technicalDataHandler(outputRoot, pool, send);
 const contractingCompany = 'SINABO_CONTRACTING';
 const contractingFolder = 'SINABO Contracting';
 const allowedCompanies = new Set(['SINABO', contractingCompany, 'UES', 'USS']);
@@ -361,6 +363,12 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'GET' && req.url === '/healthz') return send(res, 200, { ok: true });
   if (req.method === 'POST' && req.url === '/submit') return handleSubmit(req, res);
   if (req.method === 'GET' && req.url === '/history') return handleHistory(req, res);
+  if (req.method === 'GET') {
+    const route = req.url.split('?')[0];
+    if (route === '/technical-data' || route === '/technical-data/download') {
+      return handleTechnicalData(req, res, new URL(req.url, 'http://localhost'));
+    }
+  }
   send(res, 404, { error: 'Not found' });
 });
 

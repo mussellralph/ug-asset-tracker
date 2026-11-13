@@ -52,6 +52,8 @@ Keep the existing database directory mounted unchanged at `/mnt/SmartHome/Apps/u
 
 Signed job-card PDFs are saved beneath the existing `/mnt/SmartHome/Jobcards` folder, separated by company.
 
+Create `/mnt/SmartHome/Jobcards/Technical Data` in the existing share and add reference files there. Subfolders can organize documents by company or type. Signed-in staff can browse and download the files from **Technical Data** (under **More** on mobile). Manage the source files through the share and give the app container read access to the folder.
+
 ## Step 2: Image access
 
 The images on GitHub Container Registry are **public**, so TrueNAS pulls them without a login. The source repo is currently public too. Keep credentials out of the repository.

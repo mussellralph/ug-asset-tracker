@@ -83,7 +83,7 @@
       min-height: 3.5rem;
       padding-inline: 0.65rem;
       border: 1px solid #a92c45;
-      border-radius: 9999px;
+      border-radius: 0.9rem;
       font-weight: 800;
       line-height: 1.15;
     }
@@ -122,6 +122,12 @@
 
     @media (max-width: 359px) {
       #mobile-tab-nav > button { font-size: 10px; }
+    }
+
+    .desktop-tab-nav > button {
+      min-width: 0;
+      padding-inline: 0.5rem;
+      text-wrap: balance;
     }
 
     @media (min-width: 768px) and (max-width: 1199px) {
@@ -306,12 +312,12 @@
   </div>
 
   <div class="hidden md:block bg-[#111113] px-6 pt-3 pb-2">
-    <nav aria-label="Main navigation" class="desktop-tab-nav mx-auto max-w-[69rem] md:flex items-center space-x-2 bg-[#18181B] p-1.5 rounded-xl border border-zinc-800">
+    <nav aria-label="Main navigation" class="desktop-tab-nav mx-auto max-w-[69rem] md:flex items-center gap-2 bg-[#18181B] p-1.5 rounded-xl border border-zinc-800">
       <button onclick="switchTab('jobcards')" id="tab-btn-jobcards" class="flex-1 py-2.5 px-3 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition duration-150 text-zinc-400 hover:text-white hover:bg-zinc-800/70">
         <i class="fa-solid fa-file-signature text-amber-400"></i> Job Cards
       </button>
       <button onclick="switchTab('scan')" id="tab-btn-scan" aria-current="page" class="flex-1 py-2.5 px-4 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition duration-150 bg-[#C41E3A] text-white shadow-md">
-        <i class="fa-solid fa-qrcode"></i> QR Sign-Out / Sign-In
+        <i class="fa-solid fa-qrcode"></i> Tools &amp; Assets
       </button>
       <button onclick="switchTab('fleet')" id="tab-btn-fleet" class="flex-1 py-2.5 px-4 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition duration-150 text-zinc-400 hover:text-white hover:bg-zinc-800/70">
         <i class="fa-solid fa-truck-pickup text-sky-400"></i> Fleet &amp; Mileage <span class="tab-nav-count">(<span id="nav-fleet-count">3</span>)</span>
@@ -322,6 +328,9 @@
           <span>Manager Dashboard</span>
           <span class="tab-nav-count rounded-full bg-black/25 px-2 py-0.5 text-[10px] whitespace-nowrap"><span id="nav-checkout-count">0</span> Out</span>
         </span>
+      </button>
+      <button onclick="switchTab('technical-data')" id="tab-btn-technical-data" class="flex-1 py-2.5 px-4 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition duration-150 text-zinc-400 hover:text-white hover:bg-zinc-800/70">
+        <i class="fa-solid fa-book text-sky-400"></i> Technical Data
       </button>
       <button onclick="switchTab('inventory')" id="tab-btn-inventory" class="flex-1 py-2.5 px-4 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition duration-150 text-zinc-400 hover:text-white hover:bg-zinc-800/70">
         <i class="fa-solid fa-boxes-stacked"></i> Master Asset Register
@@ -1027,6 +1036,22 @@
       </div>
     </section>
 
+    <!-- TECHNICAL DATA LIBRARY -->
+    <section id="view-technical-data" class="hidden">
+      <div class="bg-[#18181B] border border-zinc-800 rounded-2xl p-4 sm:p-5 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h2 class="text-lg font-bold text-white"><i class="fa-solid fa-book text-sky-400 mr-2" aria-hidden="true"></i>Technical Data</h2>
+          <button type="button" onclick="loadTechnicalData(technicalDataPath)" class="px-3 py-2 rounded-lg bg-zinc-800 text-sm font-semibold">Refresh</button>
+        </div>
+        <div class="flex items-center gap-3 text-sm">
+          <button type="button" id="technical-data-back" hidden class="shrink-0 rounded-lg bg-zinc-800 px-3 py-2">Up one folder</button>
+          <span id="technical-data-path" class="min-w-0 break-words text-zinc-300">Shared references</span>
+        </div>
+        <p id="technical-data-status" role="status" class="text-sm text-zinc-300"></p>
+        <ul id="technical-data-list" class="divide-y divide-zinc-800"></ul>
+      </div>
+    </section>
+
     <!-- SECTION 5: SERVER DATABASE SYNC & DIAGNOSTICS -->
     <section id="view-golive" class="hidden space-y-6">
       <div class="bg-[#18181B] border-2 border-emerald-500/50 rounded-2xl p-5 md:p-6 shadow-xl space-y-5">
@@ -1089,7 +1114,7 @@
     </button>
     <button onclick="switchTab('scan')" id="mob-nav-scan" aria-current="page" class="flex flex-col items-center gap-1 text-[#C41E3A] font-bold text-[11px]">
       <i class="fa-solid fa-qrcode text-lg"></i>
-      <span>Scan QR</span>
+      <span>Tools &amp; Assets</span>
     </button>
     <button onclick="switchTab('fleet')" id="mob-nav-fleet" class="flex flex-col items-center gap-1 text-zinc-400 hover:text-white font-medium text-[11px]">
       <i class="fa-solid fa-truck-pickup text-lg"></i>
@@ -1104,14 +1129,15 @@
       <i class="fa-solid fa-boxes-stacked text-lg"></i>
       <span>Register</span>
     </button>
-    <button onclick="switchTab('master')" id="mob-nav-master" class="flex flex-col items-center gap-1 text-zinc-400 hover:text-white font-medium text-[11px]">
-      <i class="fa-solid fa-user-shield text-lg"></i>
-      <span>Master</span>
+    <button type="button" onclick="toggleMobileMore()" id="mob-nav-more" aria-expanded="false" aria-controls="mobile-more-links" class="flex flex-col items-center gap-1 text-zinc-400 hover:text-white font-medium text-[11px]">
+      <i class="fa-solid fa-ellipsis text-lg" aria-hidden="true"></i>
+      <span>More</span>
     </button>
-    <button onclick="switchTab('golive')" id="mob-nav-golive" class="flex flex-col items-center gap-1 text-zinc-400 hover:text-white font-medium text-[11px]">
-      <i class="fa-solid fa-cloud-arrow-up text-lg"></i>
-      <span>Go-Live</span>
-    </button>
+    <div id="mobile-more-links" hidden class="absolute bottom-full right-2 mb-2 w-52 rounded-xl border border-zinc-700 bg-[#18181B] p-1.5 shadow-xl">
+      <button type="button" onclick="switchTab('technical-data')" id="mob-nav-technical-data" class="block w-full rounded-lg px-3 py-3 text-left text-sm hover:bg-zinc-800">Technical Data</button>
+      <button type="button" onclick="switchTab('master')" id="mob-nav-master" class="hidden w-full rounded-lg px-3 py-3 text-left text-sm hover:bg-zinc-800">Master Control</button>
+      <button type="button" onclick="switchTab('golive')" id="mob-nav-golive" class="hidden w-full rounded-lg px-3 py-3 text-left text-sm hover:bg-zinc-800">Server &amp; Sync</button>
+    </div>
   </nav>
 
   <!-- MODAL 1: TOOL SIGN OUT / SIGN IN DIALOG -->
@@ -2113,6 +2139,7 @@
       if (pinInputEl) pinInputEl.value = '';
       document.getElementById('auth-gate-overlay').classList.add('hidden');
       applyRoleBasedUI();
+      if (!document.getElementById('view-technical-data').classList.contains('hidden')) loadTechnicalData();
       showToast(`Signed in as ${currentUser.name} (${currentUser.role})`);
       if (sessionToken) { pullAllFromServer(false); flushJobCardQueue(); }
     }
@@ -2125,6 +2152,8 @@
       }
       sessionToken = null;
       currentUser = null;
+      toggleMobileMore(false);
+      resetTechnicalData();
       impersonatedRole = null;
       sessionStorage.removeItem('ug_active_user_v4');
       const pinInput = document.getElementById('login-pin-input');
@@ -3530,6 +3559,117 @@
 
     window.addEventListener('online', () => { if (sessionToken) flushJobCardQueue(); });
 
+    // TECHNICAL DATA LIBRARY
+    let technicalDataPath = '';
+    let technicalDataRequest = 0;
+
+    function toggleMobileMore(open, restoreFocus = false) {
+      const links = document.getElementById('mobile-more-links');
+      const button = document.getElementById('mob-nav-more');
+      const show = open ?? links.hidden;
+      links.hidden = !show;
+      button.setAttribute('aria-expanded', String(show));
+      if (restoreFocus) button.focus();
+    }
+
+    document.addEventListener('click', event => {
+      if (!event.target.closest('#mobile-more-links, #mob-nav-more')) toggleMobileMore(false);
+    });
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && !document.getElementById('mobile-more-links').hidden) {
+        toggleMobileMore(false, true);
+      }
+    });
+
+    function resetTechnicalData() {
+      technicalDataRequest++;
+      technicalDataPath = '';
+      document.getElementById('technical-data-list').replaceChildren();
+      document.getElementById('technical-data-path').textContent = 'Shared references';
+      document.getElementById('technical-data-status').textContent = '';
+      document.getElementById('technical-data-back').hidden = true;
+    }
+
+    async function requestTechnicalData(itemPath, token, download = false) {
+      const route = download ? 'technical-data/download' : 'technical-data';
+      const response = await fetch(`/jobcards/api/${route}?${new URLSearchParams({ path: itemPath })}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.status === 401 && sessionToken === token) handleSessionExpired();
+      if (!response.ok) {
+        const result = await response.json().catch(() => null);
+        throw new Error(result?.error || 'Could not access the Technical Data library.');
+      }
+      return response;
+    }
+
+    async function loadTechnicalData(folder = '') {
+      const request = ++technicalDataRequest;
+      const token = sessionToken;
+      const list = document.getElementById('technical-data-list');
+      const status = document.getElementById('technical-data-status');
+      const back = document.getElementById('technical-data-back');
+      technicalDataPath = folder;
+      list.replaceChildren();
+      back.hidden = !folder;
+      back.onclick = () => loadTechnicalData(folder.split('/').slice(0, -1).join('/'));
+      document.getElementById('technical-data-path').textContent = folder ? folder.split('/').join(' / ') : 'Shared references';
+      if (!token) {
+        status.textContent = 'Connect to the server and sign in to access Technical Data.';
+        return;
+      }
+      status.textContent = 'Loading references…';
+      try {
+        const response = await requestTechnicalData(folder, token);
+        const { entries } = await response.json();
+        if (request !== technicalDataRequest || token !== sessionToken) return;
+        status.textContent = entries.length ? '' : 'No references in this folder yet.';
+        for (const entry of entries) {
+          const item = document.createElement('li');
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'flex w-full items-center gap-3 rounded-lg px-2 py-3 text-left text-sm hover:bg-zinc-800';
+          const icon = document.createElement('i');
+          icon.className = entry.directory ? 'fa-solid fa-folder text-amber-400' : 'fa-solid fa-file text-sky-400';
+          icon.setAttribute('aria-hidden', 'true');
+          const label = document.createElement('span');
+          label.className = 'min-w-0 break-words';
+          label.textContent = entry.name;
+          button.append(icon, label);
+          button.setAttribute('aria-label', `${entry.directory ? 'Open folder' : 'Download'} ${entry.name}`);
+          const itemPath = folder ? `${folder}/${entry.name}` : entry.name;
+          button.onclick = entry.directory ? () => loadTechnicalData(itemPath) : () => downloadTechnicalData(itemPath, entry.name, button);
+          item.append(button);
+          list.append(item);
+        }
+      } catch (error) {
+        if (request === technicalDataRequest && token === sessionToken) status.textContent = error.message;
+      }
+    }
+
+    async function downloadTechnicalData(itemPath, name, button) {
+      const token = sessionToken;
+      if (!token) return;
+      button.disabled = true;
+      try {
+        const response = await requestTechnicalData(itemPath, token, true);
+        const blob = await response.blob();
+        if (token !== sessionToken) return;
+        const objectUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = objectUrl;
+        link.download = name;
+        document.body.append(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(objectUrl), 30000);
+      } catch (error) {
+        if (token === sessionToken) showToast(error.message, 'error');
+      } finally {
+        button.disabled = false;
+      }
+    }
+
     // NAVIGATION TAB SWITCHING
     function switchTab(tab) {
       const perms = getEffectivePermissions();
@@ -3550,7 +3690,15 @@
         return;
       }
 
-      ['scan', 'checkouts', 'inventory', 'fleet', 'jobcards', 'master', 'golive'].forEach(t => {
+      const moreTabs = ['technical-data', 'master', 'golive'];
+      const moreLinks = document.getElementById('mobile-more-links');
+      const moreHadFocus = moreLinks.contains(document.activeElement);
+      toggleMobileMore(false, moreHadFocus);
+      document.getElementById('mob-nav-more').setAttribute('aria-current', moreTabs.includes(tab) ? 'page' : 'false');
+      document.getElementById('mob-nav-more').classList.toggle('text-[#C41E3A]', moreTabs.includes(tab));
+      document.getElementById('mob-nav-more').classList.toggle('text-zinc-400', !moreTabs.includes(tab));
+
+      ['scan', 'checkouts', 'inventory', 'fleet', 'jobcards', ...moreTabs].forEach(t => {
         const view = document.getElementById(`view-${t}`);
         const btn = document.getElementById(`tab-btn-${t}`);
         const mob = document.getElementById(`mob-nav-${t}`);
@@ -3567,7 +3715,11 @@
           btn.setAttribute('aria-current', t === tab ? 'page' : 'false');
           btn.classList.toggle('hidden', !isVisible);
         }
-        if (mob) {
+        if (mob && moreTabs.includes(t)) {
+          mob.setAttribute('aria-current', t === tab ? 'page' : 'false');
+          mob.classList.toggle('text-rose-300', t === tab);
+          mob.classList.toggle('hidden', !isVisible);
+        } else if (mob) {
           mob.className = (t === tab
             ? "flex flex-col items-center gap-1 text-[#C41E3A] font-bold text-[11px] relative"
             : "flex flex-col items-center gap-1 text-zinc-400 hover:text-white font-medium text-[11px] relative");
@@ -3579,6 +3731,10 @@
       if (tab === 'checkouts') renderCheckoutsList();
       if (tab === 'inventory') renderInventoryTable();
       if (tab === 'fleet') renderFleetAndMileageView();
+      if (tab === 'technical-data') {
+        loadTechnicalData(technicalDataPath);
+        window.scrollTo(0, 0);
+      }
       if (tab === 'jobcards') {
         const servicemanInput = document.getElementById('jc-serviceman');
         if (servicemanInput) servicemanInput.value = currentUser?.name || '';

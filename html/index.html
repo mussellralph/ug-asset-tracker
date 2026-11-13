@@ -208,8 +208,9 @@
     </button>
   </div>
 
-  <!-- TOP CORPORATE HEADER WITH ULTIMATE GROUP LOGO -->
-  <header class="sticky top-0 z-40 bg-[#18181B]/95 backdrop-blur-md border-b-2 border-[#C41E3A] px-4 py-2.5 shadow-xl">
+  <!-- STICKY HEADER AND DESKTOP NAVIGATION -->
+  <header id="app-header" class="sticky top-0 z-40">
+  <div class="bg-[#18181B]/95 backdrop-blur-md border-b-2 border-[#C41E3A] px-4 py-2.5 shadow-xl">
     <div class="mobile-header-layout max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-3">
       
       <!-- Brand Logo Lockup -->
@@ -257,13 +258,10 @@
         </button>
       </div>
     </div>
-  </header>
+  </div>
 
-  <!-- MAIN CONTAINER -->
-  <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6 space-y-6">
-
-    <!-- DESKTOP / TABLET NAV TABS -->
-    <nav class="desktop-tab-nav hidden md:flex items-center space-x-2 bg-[#18181B] p-1.5 rounded-xl border border-zinc-800">
+  <div class="hidden md:block bg-[#111113] px-6 pt-3 pb-2">
+    <nav aria-label="Main navigation" class="desktop-tab-nav mx-auto max-w-[69rem] md:flex items-center space-x-2 bg-[#18181B] p-1.5 rounded-xl border border-zinc-800">
       <button onclick="switchTab('scan')" id="tab-btn-scan" class="flex-1 py-2.5 px-4 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition duration-150 bg-[#C41E3A] text-white shadow-md">
         <i class="fa-solid fa-qrcode"></i> QR Sign-Out / Sign-In
       </button>
@@ -286,6 +284,11 @@
         <i class="fa-solid fa-cloud-arrow-up text-emerald-400"></i> Server &amp; Sync
       </button>
     </nav>
+  </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6 space-y-6">
 
     <!-- SECTION 1: SCANNER & SIGN OUT/IN VIEW -->
     <section id="view-scan" class="space-y-6">
@@ -5072,6 +5075,14 @@
 
     // INITIALIZE APPLICATION ON LOAD
     window.addEventListener('DOMContentLoaded', () => {
+      // Keep focused or scrolled-to content below the sticky header.
+      const appHeader = document.getElementById('app-header');
+      const updateScrollPadding = () => {
+        document.documentElement.style.scrollPaddingTop = `${appHeader.offsetHeight + 12}px`;
+      };
+      updateScrollPadding();
+      if (typeof ResizeObserver === 'function') new ResizeObserver(updateScrollPadding).observe(appHeader);
+
       renderSinaboJobCardFields();
       const jobCardDate = document.getElementById('jc-date');
       if (jobCardDate) jobCardDate.value = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);

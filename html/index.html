@@ -846,7 +846,7 @@
                 <label class="text-[11px] text-zinc-400">Site *<input id="uss-site" maxlength="200" class="jobcard-input" /></label>
                 <div class="sm:col-span-2 lg:col-span-3 rounded-xl border border-zinc-800 p-3 space-y-2"><div class="flex items-center justify-between gap-2"><span class="text-[11px] text-zinc-300">Personnel on site</span><button type="button" onclick="addJobCardPersonnelRow('', 'uss-personnel')" class="px-3 py-1.5 rounded-lg bg-zinc-800 text-zinc-200 text-xs font-semibold"><i class="fa-solid fa-user-plus mr-1"></i>Add Staff Member</button></div><div id="uss-personnel" class="space-y-2"></div></div>
               </div>
-              <div id="uss-travel-details" class="hidden grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3"><label class="text-[11px] text-zinc-400">Odometer opening<input id="uss-odo-open" maxlength="80" class="jobcard-input" /></label><label class="text-[11px] text-zinc-400">Odometer closing<input id="uss-odo-close" maxlength="80" class="jobcard-input" /></label><label class="text-[11px] text-zinc-400">Start time<input id="uss-time-start" maxlength="40" class="jobcard-input" /></label><label class="text-[11px] text-zinc-400">Finish time<input id="uss-time-finish" maxlength="40" class="jobcard-input" /></label><label class="text-[11px] text-zinc-400">Total hours<input id="uss-hours" maxlength="40" class="jobcard-input" /></label></div>
+              <div id="uss-travel-details" class="hidden grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3"><label class="text-[11px] text-zinc-400">Odometer opening<input id="uss-odo-open" maxlength="80" class="jobcard-input" /></label><label class="text-[11px] text-zinc-400">Odometer closing<input id="uss-odo-close" maxlength="80" class="jobcard-input" /></label><label class="text-[11px] text-zinc-400">Total hours<input id="uss-hours" maxlength="40" class="jobcard-input" /></label></div>
             </section>
             <section class="rounded-xl border border-zinc-800 bg-zinc-950/50 p-3 sm:p-4 space-y-3">
               <h3 class="text-xs font-bold uppercase tracking-wider text-amber-300">Job description and works</h3>
@@ -940,8 +940,6 @@
                 </div>
                 <p id="jc-site-range-previous" class="mt-1 hidden"></p>
               </fieldset>
-              <label id="jc-utility-travel-time" class="hidden text-[11px] text-zinc-400">Travel time<input id="jc-travel-time" maxlength="60" class="jobcard-input" placeholder="e.g. 1 h 30 min" /></label>
-              <label id="jc-utility-time-on-site" class="hidden text-[11px] text-zinc-400">Time on site<input id="jc-time-on-site" maxlength="60" class="jobcard-input" placeholder="e.g. 2 h" /></label>
               <label class="text-[11px] text-zinc-400">Kilometres<input id="jc-kilometres" inputmode="decimal" maxlength="40" class="jobcard-input" /></label>
             </div>
             <label class="block text-[11px] text-zinc-400">Remarks<textarea id="jc-remarks" rows="3" maxlength="2000" class="jobcard-input resize-y"></textarea></label>
@@ -2803,7 +2801,7 @@
       { label: 'Check plant selector switch AUTO', options: ['Yes', 'No'] }
     ];
     let activeJobCardDraftId = null;
-    let sinaboDraftDurations = { travelTime: '', timeOnSite: '' };
+    let savedJobCardTravel = {};
     let jobCardQueueBusy = false;
     const JOBCARD_PERSONNEL_CACHE_KEY = 'ug_jobcard_personnel_cache_v1';
     let jobCardCustomPersonnel = (() => {
@@ -3134,12 +3132,6 @@
       if (utility && !document.getElementById('uss-date')?.value) document.getElementById('uss-date').value = today;
       document.getElementById('uss-jobcard-fields')?.classList.toggle('hidden', !utility);
       document.getElementById('uss-travel-details')?.classList.toggle('hidden', !utility);
-      for (const id of ['jc-travel-range', 'jc-site-range']) {
-        document.getElementById(id)?.classList.toggle('hidden', utility);
-      }
-      for (const id of ['jc-utility-travel-time', 'jc-utility-time-on-site']) {
-        document.getElementById(id)?.classList.toggle('hidden', !utility);
-      }
       ['sinabo-generator-details','sinabo-generator-checks-section','sinabo-generator-readings-section','sinabo-personnel','sinabo-run-tests','sinabo-control-tests','sinabo-parts'].forEach(id => document.getElementById(id)?.closest('.rounded-xl')?.classList.toggle('hidden', utility));
       for (const code of Object.keys(JOB_CARD_COMPANY_LABELS)) {
         const button = document.getElementById(`jobcard-company-${code.toLowerCase()}`);
@@ -3160,13 +3152,27 @@
       const value = id => (document.getElementById(id)?.value || '').trim();
       const company = document.getElementById('jobcard-company')?.value || 'SINABO';
       const servicemanName = currentUser?.name || value('jc-serviceman');
+      const travelStart = value('jc-travel-start');
+      const travelFinish = value('jc-travel-finish');
+      const siteStart = value('jc-site-start');
+      const siteFinish = value('jc-site-finish');
+      const travel = {
+        travelStart, travelFinish, siteStart, siteFinish,
+        travelTime: travelStart || travelFinish ? '' : savedJobCardTravel.travelTime || '',
+        timeOnSite: savedJobCardTravel.timeOnSite || '',
+        kilometres: value('jc-kilometres'),
+        remarks: value('jc-remarks')
+      };
       if (company !== 'SINABO') return {
         clientId: activeJobCardDraftId || newJobCardId(), company, serviceScheduleNo: value('uss-job-no'), date: value('uss-date'),
         jobNo: value('uss-job-no'), customer: value('uss-customer'), quoteNo: value('uss-quote-no'), orderNo: value('uss-order-no'), requiredDate: value('uss-required-date'), site: value('uss-site'),
-        personnel: [...document.querySelectorAll('#uss-personnel [data-jobcard-personnel-select]')].map(select => select.value.trim()).filter(name => name && name !== '__add_new__'), odometerOpening: value('uss-odo-open'), odometerClosing: value('uss-odo-close'), kilometres: value('jc-kilometres'),
-        travelTime: value('jc-travel-time'), timeOnSite: value('jc-time-on-site'), timeStart: value('uss-time-start'), timeFinish: value('uss-time-finish'), totalHours: value('uss-hours'), tasks: value('uss-tasks'), worksComplete: value('uss-complete'),
+        personnel: [...document.querySelectorAll('#uss-personnel [data-jobcard-personnel-select]')].map(select => select.value.trim()).filter(name => name && name !== '__add_new__'), odometerOpening: value('uss-odo-open'), odometerClosing: value('uss-odo-close'),
+        ...travel,
+        timeStart: siteStart || siteFinish ? '' : savedJobCardTravel.timeStart || '',
+        timeFinish: siteStart || siteFinish ? '' : savedJobCardTravel.timeFinish || '',
+        totalHours: value('uss-hours'), tasks: value('uss-tasks'), worksComplete: value('uss-complete'),
         worksInProgress: value('uss-progress'), additionalWork: value('uss-additional'), requestedBy: value('uss-requested-by'), requestDate: value('uss-request-date'),
-        remarks: value('jc-remarks'), billing: document.querySelector('input[name="uss-billing"]:checked')?.value || '', customerRepName: value('jc-customer-rep'), servicemanName,
+        billing: document.querySelector('input[name="uss-billing"]:checked')?.value || '', customerRepName: value('jc-customer-rep'), servicemanName,
         customerSignature: includeSignatures ? jobCardSignatureData('customer') : '', servicemanSignature: includeSignatures ? jobCardSignatureData('serviceman') : ''
       };
       const checks = SINABO_CHECK_ITEMS.map((label, i) => ({ label, result: value(`jc-check-${i}`), notes: value(`jc-check-note-${i}`) }));
@@ -3179,19 +3185,12 @@
       const personnel = [...(document.querySelectorAll('#sinabo-personnel [data-jobcard-personnel-select]') || [])]
         .map(select => select.value.trim()).filter(name => name && name !== '__add_new__')
         .filter((name, index, names) => names.findIndex(item => item.toLowerCase() === name.toLowerCase()) === index);
-      const travelStart = value('jc-travel-start');
-      const travelFinish = value('jc-travel-finish');
-      const siteStart = value('jc-site-start');
-      const siteFinish = value('jc-site-finish');
       return {
         clientId: activeJobCardDraftId || newJobCardId(), company: 'SINABO', serviceScheduleNo: value('jc-schedule'), date: value('jc-date'),
         jobNo: value('jc-unit-ref'), serviceType: value('jc-service-type'), customer: value('jc-customer'), orderNo: value('jc-order-no'), site: value('jc-site'),
         hourMetre: value('jc-hour-metre'), engineType: value('jc-engine-type'), alternatorType: value('jc-alternator-type'),
         checks, readings, runTests: collectTests(SINABO_RUN_TESTS, 'jc-run'), controlTests: collectTests(SINABO_CONTROL_TESTS, 'jc-control'),
-        parts, personnel, travelStart, travelFinish, siteStart, siteFinish,
-        travelTime: travelStart || travelFinish ? '' : sinaboDraftDurations.travelTime,
-        timeOnSite: siteStart || siteFinish ? '' : sinaboDraftDurations.timeOnSite,
-        kilometres: value('jc-kilometres'), remarks: value('jc-remarks'),
+        parts, personnel, ...travel,
         customerRepName: value('jc-customer-rep'), servicemanName: currentUser?.name || value('jc-serviceman'),
         customerSignature: includeSignatures ? jobCardSignatureData('customer') : '',
         servicemanSignature: includeSignatures ? jobCardSignatureData('serviceman') : ''
@@ -3208,13 +3207,37 @@
       if (el) { el.className = `text-xs ${tone}`; el.textContent = message; }
     }
 
-    function setSinaboDraftDurations(travelTime = '', timeOnSite = '') {
-      sinaboDraftDurations = { travelTime, timeOnSite };
-      for (const [id, duration] of [['jc-travel-range-previous', travelTime], ['jc-site-range-previous', timeOnSite]]) {
+    function restoreJobCardTravel(data = {}) {
+      let { siteStart = '', siteFinish = '' } = data;
+      let { timeStart = '', timeFinish = '' } = data;
+      if (!siteStart && !siteFinish) {
+        // Older USS-style drafts used free-text times. Only put valid clock times in the pickers.
+        const clockTime = value => /^(?:[01]?\d|2[0-3]):[0-5]\d$/.test(value) ? value.padStart(5, '0') : '';
+        const start = clockTime(timeStart);
+        const finish = clockTime(timeFinish);
+        if ((!timeStart || start) && (!timeFinish || finish)) {
+          siteStart = start;
+          siteFinish = finish;
+          timeStart = '';
+          timeFinish = '';
+        }
+      }
+      for (const [id, time] of [
+        ['jc-travel-start', data.travelStart], ['jc-travel-finish', data.travelFinish],
+        ['jc-site-start', siteStart], ['jc-site-finish', siteFinish]
+      ]) {
+        document.getElementById(id).value = time || '';
+      }
+      savedJobCardTravel = { travelTime: data.travelTime, timeOnSite: data.timeOnSite, timeStart, timeFinish };
+      const legacySiteTimes = timeStart || timeFinish ? `Start ${timeStart || '-'} / Finish ${timeFinish || '-'}` : '';
+      const siteDetails = [!siteStart && !siteFinish && legacySiteTimes, data.timeOnSite].filter(Boolean).join(' · ');
+      for (const [id, details] of [
+        ['jc-travel-range-previous', !data.travelStart && !data.travelFinish && data.travelTime],
+        ['jc-site-range-previous', siteDetails]
+      ]) {
         const note = document.getElementById(id);
-        if (!note) continue;
-        note.textContent = duration ? `Saved duration: ${duration}` : '';
-        note.classList.toggle('hidden', !duration);
+        note.textContent = details ? `Saved: ${details}` : '';
+        note.classList.toggle('hidden', !details);
       }
     }
 
@@ -3222,7 +3245,7 @@
       const company = document.getElementById('jobcard-company')?.value;
       document.getElementById('sinabo-jobcard-form')?.reset();
       selectJobCardCompany(company);
-      setSinaboDraftDurations();
+      restoreJobCardTravel();
       const date = document.getElementById('jc-date');
       if (date) date.value = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
       clearJobCardSignature('customer'); clearJobCardSignature('serviceman');
@@ -3314,27 +3337,14 @@
       selectJobCardCompany(company);
       const utility = company !== 'SINABO';
       if (utility) {
-        const map = { 'uss-date':'date','uss-job-no':'jobNo','uss-customer':'customer','uss-quote-no':'quoteNo','uss-order-no':'orderNo','uss-required-date':'requiredDate','uss-site':'site','uss-odo-open':'odometerOpening','uss-odo-close':'odometerClosing','jc-travel-time':'travelTime','jc-time-on-site':'timeOnSite','jc-kilometres':'kilometres','jc-remarks':'remarks','uss-time-start':'timeStart','uss-time-finish':'timeFinish','uss-hours':'totalHours','uss-tasks':'tasks','uss-complete':'worksComplete','uss-progress':'worksInProgress','uss-additional':'additionalWork','uss-requested-by':'requestedBy','uss-request-date':'requestDate' };
+        const map = { 'uss-date':'date','uss-job-no':'jobNo','uss-customer':'customer','uss-quote-no':'quoteNo','uss-order-no':'orderNo','uss-required-date':'requiredDate','uss-site':'site','uss-odo-open':'odometerOpening','uss-odo-close':'odometerClosing','uss-hours':'totalHours','uss-tasks':'tasks','uss-complete':'worksComplete','uss-progress':'worksInProgress','uss-additional':'additionalWork','uss-requested-by':'requestedBy','uss-request-date':'requestDate' };
         Object.entries(map).forEach(([id,key]) => { const el=document.getElementById(id); if(el) el.value=data[key] || ''; });
         const ussPersonnel = document.getElementById('uss-personnel'); ussPersonnel.innerHTML = ''; (data.personnel?.length ? data.personnel : ['']).forEach(name => addJobCardPersonnelRow(name, 'uss-personnel'));
         const billing = document.querySelector(`input[name="uss-billing"][value="${data.billing}"]`); if (billing) billing.checked = true;
       }
       const map = { 'jc-schedule': 'serviceScheduleNo', 'jc-date': 'date', 'jc-unit-ref': 'jobNo', 'jc-service-type': 'serviceType', 'jc-customer': 'customer', 'jc-order-no': 'orderNo', 'jc-site': 'site', 'jc-hour-metre': 'hourMetre', 'jc-engine-type': 'engineType', 'jc-alternator-type': 'alternatorType', 'jc-kilometres': 'kilometres', 'jc-remarks': 'remarks', 'jc-customer-rep': 'customerRepName' };
       Object.entries(map).forEach(([id, key]) => { const el = document.getElementById(id); if (el) el.value = data[key] || (key === 'jobNo' ? data.unitRef : '') || ''; });
-      const sinaboTimes = {
-        'jc-travel-start': data.travelStart,
-        'jc-travel-finish': data.travelFinish,
-        'jc-site-start': data.siteStart,
-        'jc-site-finish': data.siteFinish
-      };
-      for (const [id, time] of Object.entries(sinaboTimes)) {
-        const input = document.getElementById(id);
-        if (input) input.value = utility ? '' : time || '';
-      }
-      setSinaboDraftDurations(
-        utility || data.travelStart || data.travelFinish ? '' : data.travelTime,
-        utility || data.siteStart || data.siteFinish ? '' : data.timeOnSite
-      );
+      restoreJobCardTravel(data);
       SINABO_READING_ITEMS.forEach((_, i) => {
         const reading = document.getElementById(`jc-reading-${i}`);
         const notApplicable = document.getElementById(`jc-reading-na-${i}`);

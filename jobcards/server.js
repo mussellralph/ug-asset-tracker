@@ -188,13 +188,21 @@ function createPdf(data, signer, signatures) {
     doc.font('Helvetica-Bold').fontSize(9).fillColor(ink).text(`${referenceLabel} ${clean(data.serviceScheduleNo, 50)}`, left, y, { width, align: 'center', lineBreak: false });
     y += 14;
 
+    function formatTimeRange(start, finish, savedDuration) {
+      if (!start && !finish) return savedDuration;
+      return `Start ${start || '-'} / Finish ${finish || '-'}`;
+    }
+
+    const travelTime = formatTimeRange(data.travelStart, data.travelFinish, data.travelTime);
+    const siteTime = formatTimeRange(data.siteStart || data.timeStart, data.siteFinish || data.timeFinish);
+    const siteDetails = [siteTime, data.timeOnSite].filter(Boolean).join(' / ');
+
     if (utility) {
       y = grid([['Date', data.date], ['Job No.', data.jobNo], ['Customer', data.customer], ['Quote No.', data.quoteNo], ['Order No.', data.orderNo], ['Required Date', data.requiredDate], ['Site', data.site]], 3, y, 28) + 4;
-      y = heading('Personnel, odometer and time on site', y);
-      const gap = 5, cw = (width - gap * 2) / 3;
+      y = heading('Personnel and odometer', y);
+      const gap = 5, cw = (width - gap) / 2;
       block('Personnel', people.join(', ') || 'None recorded', left, y, cw, 108, 8, 6.5, 1500);
-      stack('Odometer', [['Opening', data.odometerOpening], ['Closing', data.odometerClosing], ['Total kilometres', data.kilometres]], left + cw + gap, y, cw, 108);
-      stack('Time on site', [['Start', data.timeStart], ['Finish', data.timeFinish], ['Total hours', data.totalHours]], left + (cw + gap) * 2, y, cw, 108);
+      stack('Odometer', [['Opening', data.odometerOpening], ['Closing', data.odometerClosing]], left + cw + gap, y, cw, 108);
       y += 112;
       y = heading('Job description and works', y);
       const tg = 5, tw = (width - tg * 2) / 3;
@@ -203,8 +211,9 @@ function createPdf(data, signer, signatures) {
       block('Works in progress', data.worksInProgress, left + (tw + tg) * 2, y, tw, 115, 8, 6.6, 1500);
       y += 119;
       y = heading('Additional work / equipment', y);
-      y = grid([['Additional work / equipment', data.additionalWork], ['Requested by', data.requestedBy], ['Request date', data.requestDate], ['Billing', data.billing], ['Travel time', data.travelTime], ['Time on site', data.timeOnSite]], 3, y, 36, 2) + 4;
-      y = heading('Remarks', y);
+      y = grid([['Additional work / equipment', data.additionalWork], ['Requested by', data.requestedBy], ['Request date', data.requestDate], ['Billing', data.billing]], 3, y, 36, 2) + 4;
+      y = heading('Travel and notes', y);
+      y = grid([['Travel time', travelTime], ['Time on site', siteDetails], ['Kilometres', data.kilometres], ['Total hours', data.totalHours]], 4, y, 29, 2) + 4;
       block('Remarks', data.remarks, left, y, width, 82, 8, 6.4, 2000);
       y += 86;
     } else {
@@ -225,13 +234,9 @@ function createPdf(data, signer, signatures) {
       const testRows = tests.map(r => [r.label, r.unit ? (r.result || '') + ' ' + r.unit : r.result, r.notes]);
       y = pair({ title: 'Run engine and control panel tests', headers: ['Test', 'Result', 'Notes'], rows: testRows, ratios: [0.5, 0.2, 0.3] },
         { title: 'Parts / consumables supplied', headers: ['Item', 'Qty', 'Notes'], rows: parts.map(r => [r.item, r.quantity, r.notes]), ratios: [0.52, 0.16, 0.32] }, y) + 5;
-      function formatTimeRange(start, finish, savedDuration) {
-        if (!start && !finish) return savedDuration;
-        return `Start ${start || '-'} / Finish ${finish || '-'}`;
-      }
       y = grid([
-        ['Travel time', formatTimeRange(data.travelStart, data.travelFinish, data.travelTime)],
-        ['Time on site', formatTimeRange(data.siteStart, data.siteFinish, data.timeOnSite)],
+        ['Travel time', travelTime],
+        ['Time on site', siteDetails],
         ['Kilometres', data.kilometres]
       ], 3, y, 22) + 4;
       block('Remarks', data.remarks, left, y, width, 34, 3, 6.4, 2000);

@@ -3595,6 +3595,8 @@
         const data = item.data || item;
         const info = jobCardStatusFor(data, item.status || 'draft');
         const schedule = escapeJobCardHtml(item.serviceScheduleNo || data.serviceScheduleNo || 'Number not entered');
+        const jobCardNumber = item.jobCardNumber ? escapeJobCardHtml(item.jobCardNumber) : '';
+        const jobReference = escapeJobCardHtml(item.jobNo || data.jobNo || data.unitRef || item.serviceScheduleNo || data.serviceScheduleNo || '');
         const code = item.company || data.company || 'SINABO';
         const company = escapeJobCardHtml(JOB_CARD_COMPANY_LABELS[code] || code);
         const customer = escapeJobCardHtml(item.customer || data.customer || 'Customer not entered');
@@ -3603,7 +3605,7 @@
           : item.status === 'queued' ? `<button type="button" onclick="flushJobCardQueue()" class="shrink-0 px-3 py-1.5 rounded-lg bg-sky-500/15 text-sky-200 text-[11px] font-semibold">Try upload</button>`
           : `<span class="text-[10px] text-zinc-500 break-all">${escapeJobCardHtml(item.fileName || '')}</span>`;
         return `<article class="min-w-0 rounded-xl border border-zinc-800 bg-zinc-950/50 p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div class="min-w-0 space-y-1"><div class="flex flex-wrap items-center gap-2"><span class="font-mono font-bold text-sm text-white break-all">${schedule}</span><span class="text-[10px] text-zinc-500">${company}</span><span class="px-2 py-1 rounded-full border text-[10px] font-bold ${info.style}">${info.label}</span></div><div class="text-xs text-zinc-300 break-words">${customer}</div><div class="text-[10px] text-zinc-500">${when}</div></div>
+          <div class="min-w-0 space-y-1"><div class="flex flex-wrap items-center gap-2"><span class="font-mono font-bold text-sm text-white break-all">${jobCardNumber || schedule}</span><span class="text-[10px] text-zinc-500">${company}</span><span class="px-2 py-1 rounded-full border text-[10px] font-bold ${info.style}">${info.label}</span></div><div class="text-xs text-zinc-300 break-words">${customer}${jobCardNumber && jobReference ? ` · Job No. ${jobReference}` : ''}</div><div class="text-[10px] text-zinc-500">${when}</div></div>
           <div class="flex flex-wrap items-center gap-2">${action}</div></article>`;
       }).join('');
     }
@@ -3701,7 +3703,7 @@
     async function markJobCardUploaded(record, result) {
       const cleanData = { ...record.data };
       delete cleanData.customerSignature; delete cleanData.servicemanSignature;
-      await storeLocalJobCard({ ...record, id: result.id, fileName: result.fileName, submittedBy: result.submittedBy, status: 'uploaded', data: cleanData, updatedAt: new Date().toISOString() });
+      await storeLocalJobCard({ ...record, id: result.id, jobCardNumber: result.jobCardNumber, fileName: result.fileName, submittedBy: result.submittedBy, status: 'uploaded', data: cleanData, updatedAt: new Date().toISOString() });
     }
 
     async function flushJobCardQueue() {

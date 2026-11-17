@@ -108,6 +108,15 @@ CREATE TABLE IF NOT EXISTS public.job_cards (
 );
 REVOKE ALL ON public.job_cards FROM PUBLIC, anon, authenticated;
 
+ALTER TABLE public.job_cards ADD COLUMN IF NOT EXISTS job_card_number TEXT;
+CREATE UNIQUE INDEX IF NOT EXISTS job_cards_number_idx ON public.job_cards (job_card_number);
+CREATE SEQUENCE IF NOT EXISTS public.job_card_sinabo_seq;
+CREATE SEQUENCE IF NOT EXISTS public.job_card_sinabo_contracting_seq;
+CREATE SEQUENCE IF NOT EXISTS public.job_card_ues_seq;
+CREATE SEQUENCE IF NOT EXISTS public.job_card_uss_seq;
+REVOKE ALL ON SEQUENCE public.job_card_sinabo_seq, public.job_card_sinabo_contracting_seq,
+  public.job_card_ues_seq, public.job_card_uss_seq FROM PUBLIC, anon, authenticated;
+
 -- Job card assistants are a separate roster from app login accounts.
 CREATE TABLE IF NOT EXISTS public.jobcard_personnel (
   name TEXT PRIMARY KEY,

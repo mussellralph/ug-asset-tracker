@@ -13,7 +13,12 @@ const outputRoot = process.env.JOBCARDS_DIR || '/jobcards';
 const handleTechnicalData = technicalDataHandler(outputRoot, pool, send);
 const contractingCompany = 'SINABO_CONTRACTING';
 const contractingFolder = 'SINABO Contracting';
-const allowedCompanies = new Set(['SINABO', contractingCompany, 'UES', 'USS']);
+const companyNumbering = new Map([
+  ['SINABO', { prefix: 'SINABO', sequence: 'public.job_card_sinabo_seq' }],
+  [contractingCompany, { prefix: 'SCT', sequence: 'public.job_card_sinabo_contracting_seq' }],
+  ['UES', { prefix: 'UES', sequence: 'public.job_card_ues_seq' }],
+  ['USS', { prefix: 'USS', sequence: 'public.job_card_uss_seq' }]
+]);
 // Contracting cards use the existing SINABO database company, with the card type in details.
 const cardCompanySql = `CASE
   WHEN company = 'SINABO' AND details->>'company' = '${contractingCompany}' THEN '${contractingCompany}'
@@ -56,13 +61,14 @@ function signatureBuffer(value) {
   return bytes;
 }
 
-function createPdf(data, signer, signatures) {
+function createPdf(data, signer, signatures, jobCardNumber) {
   return new Promise((resolve, reject) => {
     const company = data.company || 'SINABO';
     const contracting = company === contractingCompany;
     const utility = company !== 'SINABO';
     const companyName = contracting ? 'Sinabo Contracting' : company;
-    const doc = new PDFDocument({ size: 'A4', margin: 16, info: { Title: companyName + ' Job Card', Author: signer } });
+    const title = jobCardNumber ? `${companyName} Job Card ${jobCardNumber}` : `${companyName} Job Card`;
+    const doc = new PDFDocument({ size: 'A4', margin: 16, info: { Title: title, Author: signer } });
     const chunks = [];
     doc.on('data', chunk => chunks.push(chunk));
     doc.on('error', reject);
@@ -187,7 +193,10 @@ function createPdf(data, signer, signatures) {
     let y = logoY + logoH + 3;
     let referenceLabel = utility ? 'JOB CARD NO.' : 'SERVICE SCHEDULE';
     if (contracting) referenceLabel = 'SINABO CONTRACTING - ' + referenceLabel;
-    doc.font('Helvetica-Bold').fontSize(9).fillColor(ink).text(`${referenceLabel} ${clean(data.serviceScheduleNo, 50)}`, left, y, { width, align: 'center', lineBreak: false });
+    const headingText = jobCardNumber
+      ? `${contracting ? 'SINABO CONTRACTING - ' : ''}JOB CARD NO. ${jobCardNumber}`
+      : `${referenceLabel} ${clean(data.serviceScheduleNo, 50)}`;
+    doc.font('Helvetica-Bold').fontSize(9).fillColor(ink).text(headingText, left, y, { width, align: 'center', lineBreak: false });
     y += 14;
 
     function formatTimeRange(start, finish, savedDuration) {
@@ -200,7 +209,7 @@ function createPdf(data, signer, signatures) {
     const siteDetails = [siteTime, data.timeOnSite].filter(Boolean).join(' / ');
 
     if (utility) {
-      y = grid([['Date', data.date], ['Job No.', data.jobNo], ['Customer', data.customer], ['Quote No.', data.quoteNo], ['Order No.', data.orderNo], ['Required Date', data.requiredDate], ['Site', data.site]], 3, y, 28) + 4;
+      y = grid([['Date', data.date], ['Job No.', data.jobNo || data.serviceScheduleNo], ['Customer', data.customer], ['Quote No.', data.quoteNo], ['Order No.', data.orderNo], ['Required Date', data.requiredDate], ['Site', data.site]], 3, y, 28) + 4;
       y = heading('Personnel and odometer', y);
       const gap = 5, cw = (width - gap) / 2;
       block('Personnel', people.join(', ') || 'None recorded', left, y, cw, 108, 8, 6.5, 1500);
@@ -249,16 +258,32 @@ function createPdf(data, signer, signatures) {
     doc.end();
   });
 }
+
+async function publishPdf(filePath, pdf) {
+  await fs.mkdir(path.dirname(filePath), { recursive: true });
+  const file = await fs.open(filePath, 'wx');
+  try {
+    await file.writeFile(pdf);
+    await file.close();
+  } catch (error) {
+    await file.close().catch(() => {});
+    await fs.unlink(filePath).catch(cleanupError => {
+      if (cleanupError.code !== 'ENOENT') console.error('Incomplete job card cleanup failed:', cleanupError.message);
+    });
+    throw error;
+  }
+}
+
 async function handleSubmit(req, res) {
   const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '').trim();
   if (!token || token.length > 256) return send(res, 401, { error: 'Please sign in before submitting a job card.' });
   let client;
-  let finalPath;
-  let fileWritten = false;
+  let inTransaction = false;
   try {
     const data = await readJson(req);
     const company = clean(data.company, 20).toUpperCase();
-    if (!allowedCompanies.has(company)) return send(res, 400, { error: 'Select a valid company.' });
+    const numbering = companyNumbering.get(company);
+    if (!numbering) return send(res, 400, { error: 'Select a valid company.' });
     data.company = company;
     if (company === 'SINABO' && (!clean(data.customer) || !clean(data.site) || !clean(data.serviceScheduleNo) || !clean(data.jobNo || data.unitRef))) return send(res, 400, { error: 'Complete the customer, site, service schedule number and Job No.' });
     if (company !== 'SINABO' && (!clean(data.customer) || !clean(data.site) || !clean(data.serviceScheduleNo) || !clean(data.date))) return send(res, 400, { error: 'Complete the date, customer, site and Job No.' });
@@ -277,59 +302,65 @@ async function handleSubmit(req, res) {
     const submittedBy = session.rows[0].name;
     if (clean(data.servicemanName, 160) !== submittedBy) return send(res, 403, { error: `Sign in as ${clean(data.servicemanName, 160) || 'the serviceman'} to upload this signed job card.` });
     const id = crypto.createHash('sha256').update(clientId).digest('hex').slice(0, 32);
+    await client.query('BEGIN');
+    inTransaction = true;
+    // A retry and the original request must resolve to the same submission record.
+    await client.query('SELECT pg_advisory_xact_lock(hashtextextended($1, 0))', [id]);
     const previous = await client.query(`
       SELECT ${cardCompanySql} AS company, company AS "storedCompany",
-             file_name AS "fileName", submitted_by AS "submittedBy"
+             file_name AS "fileName", submitted_by AS "submittedBy",
+             job_card_number AS "jobCardNumber"
         FROM public.job_cards
        WHERE id = $1`, [id]);
     if (previous.rowCount) {
       const { storedCompany, ...saved } = previous.rows[0];
       if (saved.company !== company) return send(res, 409, { error: 'This submission reference is already recorded under another company.' });
+      if (saved.submittedBy !== submittedBy) return send(res, 403, { error: 'This card belongs to a different submitter.' });
       const folder = company === contractingCompany && storedCompany === 'SINABO' ? contractingFolder : storedCompany;
       const savedPath = path.join(outputRoot, folder, saved.fileName);
       try {
         await fs.access(savedPath);
         return send(res, 200, { ok: true, id, ...saved, folder, alreadySubmitted: true });
-      } catch {}
+      } catch (error) {
+        if (error.code !== 'ENOENT') throw error;
+      }
       // The database can retain the submission record after a share was detached or its PDF was removed.
       // Rebuild the missing file before reporting success for a retry.
-      finalPath = savedPath;
-      await fs.mkdir(path.dirname(savedPath), { recursive: true });
-      const pdf = await createPdf(data, submittedBy, signatures);
-      await fs.writeFile(savedPath, pdf, { flag: 'wx' });
-      fileWritten = true;
+      const pdf = await createPdf(data, submittedBy, signatures, saved.jobCardNumber);
+      await publishPdf(savedPath, pdf);
       return send(res, 200, { ok: true, id, ...saved, folder, restoredFile: true });
     }
+    const { rows: [number] } = await client.query('SELECT nextval($1::regclass)::text AS value', [numbering.sequence]);
+    const jobCardNumber = `${numbering.prefix}-${number.value.padStart(6, '0')}`;
     const jobNo = clean(company === 'SINABO' ? (data.jobNo || data.unitRef) : data.serviceScheduleNo, 80).replace(/[^A-Za-z0-9_-]/g, '_');
-    const fileName = `${company}_JC_${jobNo}.pdf`;
+    const fileName = `${company}_JC_${jobNo}_${jobCardNumber}.pdf`;
     const contracting = company === contractingCompany;
     const storedCompany = contracting ? 'SINABO' : company;
     const folder = contracting ? contractingFolder : company;
-    const directory = path.join(outputRoot, folder);
-    finalPath = path.join(directory, fileName);
-    const pdf = await createPdf(data, submittedBy, signatures);
-
-    await fs.mkdir(directory, { recursive: true });
-    await client.query('BEGIN');
-    await fs.writeFile(finalPath, pdf, { flag: 'wx' });
-    fileWritten = true;
-    const auditData = { ...data };
+    const pdf = await createPdf(data, submittedBy, signatures, jobCardNumber);
+    const auditData = { ...data, clientId };
     delete auditData.customerSignature;
     delete auditData.servicemanSignature;
     await client.query(`
-      INSERT INTO public.job_cards (id, company, file_name, submitted_by, customer, service_schedule_no, details)
-      VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb)`,
-    [id, storedCompany, fileName, submittedBy, clean(data.customer, 200), clean(data.serviceScheduleNo, 100), JSON.stringify({ ...auditData, clientId })]);
+      INSERT INTO public.job_cards (id, company, file_name, submitted_by, customer, service_schedule_no, details, job_card_number)
+      VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8)`,
+    [id, storedCompany, fileName, submittedBy, clean(data.customer, 200), clean(data.serviceScheduleNo, 100), JSON.stringify(auditData), jobCardNumber]);
+    await publishPdf(path.join(outputRoot, folder, fileName), pdf);
     await client.query('COMMIT');
-    send(res, 201, { ok: true, id, company, folder, fileName, submittedBy });
+    inTransaction = false;
+    send(res, 201, { ok: true, id, company, folder, fileName, submittedBy, jobCardNumber });
   } catch (error) {
-    if (client) { try { await client.query('ROLLBACK'); } catch {} }
-    if (fileWritten && finalPath) { try { await fs.unlink(finalPath); } catch {} }
     const status = error.status || 500;
     console.error('Job card submission failed:', error.message);
     send(res, status, { error: status === 500 ? 'The job card could not be saved. Keep it on this device and try again.' : error.message });
   } finally {
-    if (client) client.release();
+    if (client) {
+      let rollbackError;
+      if (inTransaction) {
+        try { await client.query('ROLLBACK'); } catch (error) { rollbackError = error; }
+      }
+      client.release(rollbackError);
+    }
   }
 }
 
@@ -347,7 +378,8 @@ async function handleHistory(req, res) {
     const result = await pool.query(`
       SELECT id, ${cardCompanySql} AS company, file_name AS "fileName", submitted_by AS "submittedBy",
              customer, service_schedule_no AS "serviceScheduleNo", submitted_at AS "submittedAt",
-             details->>'clientId' AS "clientId"
+             details->>'clientId' AS "clientId", job_card_number AS "jobCardNumber",
+             COALESCE(NULLIF(details->>'jobNo', ''), NULLIF(details->>'unitRef', ''), service_schedule_no) AS "jobNo"
         FROM public.job_cards j
        WHERE j.submitted_by = $1
        ORDER BY j.submitted_at DESC
